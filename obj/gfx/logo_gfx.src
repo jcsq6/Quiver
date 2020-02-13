@@ -1,0 +1,26 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -optsize -noreduceopt -nomodsect -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"SRC\GFX\LOGO_GFX.C"
+	.assume ADL=1
+	SEGMENT DATA
+_logo_gfx_pal:
+	DW	65535
+	DW	0
+	DW	37722
+	DW	55714
+	DW	17825
+	DW	22726
+	DW	222
+	DW	65534
+	DW	32766
+	DW	65500
+	DW	32767
+	DW	63313
+	XDEF _logo_gfx_pal
+;    1	// convpng v7.2
+;    2	#include <stdint.h>
+;    3	#include "logo_gfx.h"
+;    4	
+;    5	uint16_t logo_gfx_pal[12] = {
+	END

@@ -1,0 +1,31 @@
+output: c
+  include-file: gfx.h
+  palettes:
+    - global_palette
+  converts:
+    - sprites
+
+palette: global_palette
+  fixed-color: {index:1, r:255, g:255, b:255}
+  fixed-color: {index:0, r:0, g:0, b:0}
+  fixed-color: {index:2, r:185, g:122, b:87}
+  fixed-color: {index:3, r:76, g:175, b:80}
+  images: automatic
+
+
+convert: sprites
+  palette: global_palette
+  compress: zx7
+  transparent-color-index: 1
+  images:
+    - HeroStill
+    - HeroRight0
+    - HeroRight1
+    - HeroRight2
+    - HeroJumpRight0
+    - HeroJumpRight1
+    - HeroJumpRight2
+    - HeroJumpUpRight
+    - map1
+    - map2
+    - map3

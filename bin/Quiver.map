@@ -1,0 +1,80 @@
+Segment  Base   Top    High   Length
+-------- ------ ------ ------ -------
+icon     D1A882 D1A882             0h
+launcher D1A882 D1A8DA            58h
+libs     D1A8DA D1A93F            65h
+startup  D1A93F D1A97E            3Fh
+cleanup  D1A97E D1A992            14h
+exit     D1A992 D1A998             6h
+code     D1A998 D1C6E8          1D50h
+data     D1C6E8 D1CE0E           726h
+strsect  D1CE0E D1CE3F            31h
+text     D1CE3F D1CE3F             0h
+bss      D031F6 D03202 D13FD6      Ch
+header   D1A87F D1A882             3h
+
+Label                           Value
+-----------------------------   ------
+_floor                        = 0220F4
+_os_DisableHomeTextBuffer     = D1A998
+_os_EnableHomeTextBuffer      = D1A9AA
+_srandom                      = D1A9BC
+__setstate                    = D1A9C3
+_random                       = D1A9D3
+__state                       = D1C6E8
+_zx7_Decompress               = D1AA2A
+__ltof                        = 000284
+__frameset                    = D1AA96
+_sprintf                      = 0000BC
+__itol                        = 000194
+__s_sbrk                      = D1AAA4
+__idivs                       = 00013C
+__iremu                       = 000170
+__icmpzero                    = 000138
+_srand                        = D1AAC4
+__fdiv                        = 000278
+__setflag                     = 000218
+__ftol                        = 00027C
+_malloc                       = D1AAFD
+__alloc_base                  = D031F6
+__findlibload                 = D1A882
+__ccleanup                    = D1A97E
+_errno                        = D008DC
+_init                         = D1A882
+_exit                         = D1A994
+__exit                        = D1A96D
+__exitsp                      = D1A96D
+__errsp                       = D1A96D
+_HeroJumpRight0_compressed    = D1C71D
+_HeroJumpRight1_compressed    = D1C79F
+_HeroJumpRight2_compressed    = D1C829
+_HeroJumpUpRight_compressed   = D1C8DA
+_HeroRight0_compressed        = D1C960
+_HeroRight1_compressed        = D1C9E8
+_HeroRight2_compressed        = D1CA76
+_HeroStill_compressed         = D1CB06
+_global_palette               = D1CB79
+_map1_compressed              = D1CBD5
+_map2_compressed              = D1CCA1
+_map3_compressed              = D1CD90
+_isTouching                   = D1C47B
+_main                         = D1ABA5
+_hero                         = D031FC
+_gfx_Begin                    = D1A8ED
+_gfx_End                      = D1A8F1
+_gfx_SetColor                 = D1A8F5
+_gfx_SetPalette               = D1A8F9
+_gfx_FillScreen               = D1A8FD
+_gfx_GetPixel                 = D1A901
+_gfx_SetDraw                  = D1A905
+_gfx_Blit                     = D1A909
+_gfx_PrintStringXY            = D1A90D
+_gfx_FillRectangle            = D1A911
+_gfx_AllocSprite              = D1A915
+_gfx_Sprite_NoClip            = D1A919
+_gfx_TransparentSprite_NoClip = D1A91D
+_gfx_GetSprite                = D1A921
+_gfx_ScaledSprite_NoClip      = D1A925
+_gfx_FlipSpriteY              = D1A929
+_gfx_SetTransparentColor      = D1A92D
+_kb_Scan                      = D1A93B
