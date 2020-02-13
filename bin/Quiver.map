@@ -6,10 +6,10 @@ libs     D1A8DA D1A93F            65h
 startup  D1A93F D1A97E            3Fh
 cleanup  D1A97E D1A992            14h
 exit     D1A992 D1A998             6h
-code     D1A998 D1C6E8          1D50h
-data     D1C6E8 D1CE0E           726h
-strsect  D1CE0E D1CE3F            31h
-text     D1CE3F D1CE3F             0h
+code     D1A998 D1C535          1B9Dh
+data     D1C535 D1CE07           8D2h
+strsect  D1CE07 D1CE98            91h
+text     D1CE98 D1CE98             0h
 bss      D031F6 D03202 D13FD6      Ch
 header   D1A87F D1A882             3h
 
@@ -21,7 +21,7 @@ _os_EnableHomeTextBuffer      = D1A9AA
 _srandom                      = D1A9BC
 __setstate                    = D1A9C3
 _random                       = D1A9D3
-__state                       = D1C6E8
+__state                       = D1C535
 _zx7_Decompress               = D1AA2A
 __ltof                        = 000284
 __frameset                    = D1AA96
@@ -45,19 +45,21 @@ _exit                         = D1A994
 __exit                        = D1A96D
 __exitsp                      = D1A96D
 __errsp                       = D1A96D
-_HeroJumpRight0_compressed    = D1C71D
-_HeroJumpRight1_compressed    = D1C79F
-_HeroJumpRight2_compressed    = D1C829
-_HeroJumpUpRight_compressed   = D1C8DA
-_HeroRight0_compressed        = D1C960
-_HeroRight1_compressed        = D1C9E8
-_HeroRight2_compressed        = D1CA76
-_HeroStill_compressed         = D1CB06
-_global_palette               = D1CB79
-_map1_compressed              = D1CBD5
-_map2_compressed              = D1CCA1
-_map3_compressed              = D1CD90
-_isTouching                   = D1C47B
+_HeroJumpRight0_compressed    = D1C56A
+_HeroJumpRight1_compressed    = D1C5EC
+_HeroJumpRight2_compressed    = D1C676
+_HeroJumpUpRight_compressed   = D1C727
+_HeroRight0_compressed        = D1C7AD
+_HeroRight1_compressed        = D1C835
+_HeroRight2_compressed        = D1C8C3
+_HeroStill_compressed         = D1C953
+_global_palette               = D1C9C6
+_map1_compressed              = D1CA36
+_map2_compressed              = D1CB02
+_map3_compressed              = D1CBF1
+_map4_compressed              = D1CC6F
+_map5_compressed              = D1CD2A
+_isTouching                   = D1C2C8
 _main                         = D1ABA5
 _hero                         = D031FC
 _gfx_Begin                    = D1A8ED
