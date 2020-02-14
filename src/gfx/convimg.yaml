@@ -10,6 +10,7 @@ palette: global_palette
   fixed-color: {index:0, r:0, g:0, b:0}
   fixed-color: {index:2, r:185, g:122, b:87}
   fixed-color: {index:3, r:76, g:175, b:80}
+  fixed-color: {index:4, r:158, g:158, b:158}
   images: automatic
 
 

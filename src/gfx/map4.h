@@ -7,8 +7,8 @@ extern "C" {
 
 #define map4_width 80
 #define map4_height 60
-#define map4_size 187
-extern unsigned char map4_compressed[187];
+#define map4_size 188
+extern unsigned char map4_compressed[188];
 
 #ifdef __cplusplus
 }

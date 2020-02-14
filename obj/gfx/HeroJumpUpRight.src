@@ -34,9 +34,9 @@ _HeroJumpUpRight_compressed:
 	DB	0
 	DB	16
 	DB	19
-	DB	31
+	DB	30
 	DB	39
-	DB	32
+	DB	31
 	DB	5
 	DB	5
 	DB	135
@@ -49,7 +49,7 @@ _HeroJumpUpRight_compressed:
 	DB	18
 	DB	58
 	DB	20
-	DB	20
+	DB	19
 	DB	167
 	DB	0
 	DB	18
@@ -102,7 +102,7 @@ _HeroJumpUpRight_compressed:
 	DB	20
 	DB	19
 	DB	77
-	DB	55
+	DB	54
 	DB	0
 	DB	4
 	DB	92

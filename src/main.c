@@ -108,7 +108,7 @@ void main(void) {
 
 	jumpingDir = nothing;
 
-	doubleJumped = inLadder = isBoosted = keyIsReleased = false;
+	ascending = doubleJumped = inLadder = isBoosted = keyIsReleased = false;
 
 	facingRight = true;
 
@@ -181,7 +181,7 @@ void main(void) {
 	if(mapNum == 1)	{
 		zx7_Decompress( map, map1_compressed );
 		hero.x = 0;
-		hero.y = 180;
+		hero.y = 150;
 	}
 	else if(mapNum == 2) {
 		zx7_Decompress( map, map2_compressed );		
@@ -222,7 +222,24 @@ void main(void) {
 
 		kb_Scan();
 
-		if((((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode) && !isTouching(rightSide, false, 0, 1)) || ((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd) && !isTouching(leftSide, false, 0, -1))) && !(((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode)) && ((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted)  {
+		tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0);
+		tempBool2 = isTouching(bottomFeet, false, 0, 0);
+		velocity = (hero.y - lastStill.y ) / 50 + 2;
+
+		dbg_ClearConsole();
+		dbg_sprintf(dbgout, "hero = (%d, %d)\n", hero.x, hero.y);
+		dbg_sprintf(dbgout, "velocity = %d\n", velocity);
+		dbg_sprintf(dbgout, "keyIsReleased = %d\n", keyIsReleased);
+		dbg_sprintf(dbgout, "ascending = %d\n", ascending);
+		dbg_sprintf(dbgout, "inLadder = %d\n", inLadder);
+		dbg_sprintf(dbgout, "doubleJumped = %d\n", doubleJumped);
+		dbg_sprintf(dbgout, "jumpingDir = %d\n", jumpingDir);
+		dbg_sprintf(dbgout, "tempBool1 = %d\n", tempBool1);
+		dbg_sprintf(dbgout, "tempBool2 = %d\n", tempBool2);
+		gfx_BlitBuffer();
+		//while(!os_GetCSC());
+
+		if((((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode) && !isTouching(rightSide, false, 0, 1)) || ((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd) && !isTouching(leftSide, false, 0, -1))) && !(((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode)) && ((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 			//IF RIGHT IS PRESSED
@@ -234,6 +251,7 @@ void main(void) {
 					keyIsReleased = false;
 					lastStill.x = hero.x;
 					lastStill.y = hero.y;
+					if(!tempBool2) doubleJumped = true;
 				}
 				hero.x += 2;
 			};
@@ -247,20 +265,23 @@ void main(void) {
 
 					lastStill.x = hero.x;
 					lastStill.y = hero.y;
+					if(!tempBool2) doubleJumped = true;
 				}				
 				hero.x -= 2;
 			}
 
-			velocity = (hero.y - lastStill.y ) / 50 + 2;
-			tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0);
-			tempBool2 = isTouching(bottomFeet, false, 0, 0);
-			if((!tempBool1 || !tempBool2) && !inLadder) {
-				if(!tempBool1)	hero.y += velocity;
-				else if(!tempBool2) hero.y++;
-				
-				if(isTouching(rightSide, false, 0, 0)) hero.x--;
-				if(isTouching(leftSide, false, 0, 0)) hero.x++;
+			//IF IS IN AIR
+			if(!tempBool2 && !inLadder){
+					//gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
+					if(!tempBool1)	hero.y += velocity;
+					else if(!tempBool2 && tempBool1) hero.y++;
+
+					if(isTouching(rightSide, false, 0, 0)) hero.x--;
+					if(isTouching(leftSide, false, 0, 0)) hero.x++;
+			}
+			else if(!inLadder && tempBool2){
+				lastStill.y = hero.y;
 			}
 
 			if(isTouching(bottomFeet, true, 0, 0)) {
@@ -268,7 +289,7 @@ void main(void) {
 				ascending = true;
 				lastStill.x = hero.x;
 				lastStill.y = hero.y;
-			}	
+			}
 
 			inLadder = false;
 			if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2 && hero.y >= 120)) inLadder = true;
@@ -295,29 +316,27 @@ void main(void) {
 		//IF NOTHING IS PRESSED
 		else{
 
-			velocity = (hero.y - lastStill.y ) / 50 + 2;
+			//if(velocity % 2 != 0) velocity++;
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 
 			//IF IS IN AIR
-			tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0);
-			tempBool2 = isTouching(bottomFeet, false, 0, 0);
-			if(((!tempBool1 && velocity > 2)|| !tempBool2) && !inLadder && !ascending){
+			if(!tempBool2 && !inLadder && !ascending){
 					//gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 					if(!tempBool1)	hero.y += velocity;
-					else if(!tempBool2) hero.y++;
+					else if(!tempBool2 && tempBool1) hero.y++;
 
 					if(isTouching(rightSide, false, 0, 0)) hero.x--;
 					if(isTouching(leftSide, false, 0, 0)) hero.x++;
 					gfx_GetSprite(behind_sprite, hero.x, hero.y);
-				}
-			else if(tempBool2 && !inLadder && !ascending && jumpingDir != nothing){
+			}
+			else if(tempBool2 && !inLadder && !ascending){
 				if(tempBool2) {
 					jumpingDir = nothing;
 					doubleJumped = false;
 				}
-				if(isTouching(bottomFeet, true, 1, 0)) {
+				if(isTouching(bottomFeet, true, 0, 0)) {
 					isBoosted = true;
 					ascending = true;
 					jumpingDir = nothing;
@@ -347,12 +366,15 @@ void main(void) {
 			//CHECK FOR JUMPING UP
 			if((kb_Data[7] & kb_Up) && jumpingDir == nothing && !doubleJumped && !inLadder) {
 				jumpingDir = up;
+				isBoosted = false;
 				ascending = true;
 
 				lastStill.x = hero.x;
 				lastStill.y = hero.y;
 
 				keyIsReleased = false;
+
+				if(!tempBool2) doubleJumped = true;
 				
 			}
 			//STANDING STILL ANIMATION
@@ -385,7 +407,6 @@ void main(void) {
 					jumpingDir = up;
 					ascending = true;
 					doubleJumped = true;
-					continue;
 				}
 
 				if(hero.x - lastStill.x <= 50 && !isTouching(rightSide, false, 0, 1)) hero.x += 2;
@@ -393,7 +414,7 @@ void main(void) {
 
 				if(ascending){
 					hero.y -= 2;
-					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, 0, 0)) {
+					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, -1, 0)) {
 						ascending = false;
 						lastStill.x = hero.x;
 						lastStill.y = hero.y;
@@ -424,14 +445,13 @@ void main(void) {
 					jumpingDir = up;
 					doubleJumped = true;
 					ascending = true;
-					continue;
 				}
 
 				if(lastStill.x - hero.x <= 50 && !isTouching(leftSide, false, 0, -1)) hero.x -= 2;
 				else if(lastStill.x - hero.x > 50 && lastStill.x - hero.x <= 65 && !isTouching(leftSide, false, 0, 0)) hero.x--;
 				if(ascending){
 					hero.y -= 2;
-					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, 0, 0)) {
+					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, -1, 0)) {
 						lastStill.x = hero.x;
 						lastStill.y = hero.y;
 						ascending = false;
@@ -459,7 +479,6 @@ void main(void) {
 					jumpingDir = up;
 					doubleJumped = true;
 					ascending = true;
-					continue;
 				}
 
 				if(((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd)) && !isTouching(leftSide, false, 0, 0)) {
@@ -489,16 +508,15 @@ void main(void) {
 			else if(isBoosted){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(kb_Data[7] & kb_Up && !ascending){
-					lastStill.x = hero.x;
-					lastStill.y = hero.y;
-					jumpingDir = up;
-					isBoosted = false;
-					doubleJumped = true;
-					ascending = true;
-					keyIsReleased = true;
-					continue;
-				}
+				//if(kb_Data[7] & kb_Up && !ascending){
+				//	lastStill.x = hero.x;
+				//	lastStill.y = hero.y;
+				//	jumpingDir = up;
+				//	isBoosted = false;
+				//	doubleJumped = true;
+				//	ascending = true;
+				//	keyIsReleased = true;
+				//}
 
 				if(((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd)) && !isTouching(leftSide, false, 0, 0)) {
 					hero.x--;
@@ -529,15 +547,6 @@ void main(void) {
 			}
 		}
 
-		dbg_ClearConsole();
-		dbg_sprintf(dbgout, "hero = (%d, %d)\n", hero.x, hero.y);
-		dbg_sprintf(dbgout, "velocity = %d\n", velocity);
-		dbg_sprintf(dbgout, "keyIsReleased = %d\n", keyIsReleased);
-		dbg_sprintf(dbgout, "ascending = %d\n", ascending);
-		dbg_sprintf(dbgout, "jumpingDir = %d\n", jumpingDir);
-		dbg_sprintf(dbgout, "tempBool1 = %d\n", tempBool1);
-		dbg_sprintf(dbgout, "tempBool2 = %d\n", tempBool2);
-		gfx_BlitBuffer();
 	}
 
 	gfx_End();
@@ -565,12 +574,12 @@ bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVeloc
 	}
 	else if(part == bottomFeet && !checkForPad){
 		for(f = 6; f <= 14; f += 3) {
-			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 0 || hero.y + 41 + yVelocity > 240 || gfx_GetPixel(hero.x + f, hero.y + 41) == 3) return true;
+			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 0 || hero.y + 41 + yVelocity > 240 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) return true;
 		}
 	}
 	else if(part == bottomFeet && checkForPad){
 		for(f = 6; f <= 14; f += 3) {
-			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 41 + yVelocity) != 3) check = false;
+			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 41 + yVelocity) != 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) check = false;
 		}
 		return check;
 	}

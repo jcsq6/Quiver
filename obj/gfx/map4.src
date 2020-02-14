@@ -9,13 +9,13 @@ _map4_compressed:
 	DB	25
 	DB	60
 	DB	0
-	DB	8
+	DB	7
 	DB	0
 	DB	0
-	DB	4
+	DB	55
 	DB	20
 	DB	0
-	DB	54
+	DB	53
 	DB	184
 	DB	4
 	DB	94
@@ -29,13 +29,13 @@ _map4_compressed:
 	DB	45
 	DB	79
 	DB	0
-	DB	54
+	DB	53
 	DB	2
 	DB	36
 	DB	0
 	DB	172
 	DB	75
-	DB	52
+	DB	51
 	DB	0
 	DB	0
 	DB	6
@@ -55,7 +55,7 @@ _map4_compressed:
 	DB	0
 	DB	161
 	DB	0
-	DB	54
+	DB	53
 	DB	248
 	DB	28
 	DB	126
@@ -64,7 +64,7 @@ _map4_compressed:
 	DB	230
 	DB	153
 	DB	4
-	DB	54
+	DB	53
 	DB	15
 	DB	192
 	DB	28
@@ -106,93 +106,94 @@ _map4_compressed:
 	DB	114
 	DB	60
 	DB	207
-	DB	26
+	DB	25
 	DB	64
-	DB	26
+	DB	25
 	DB	153
 	DB	255
 	DB	191
 	DB	78
 	DB	0
 	DB	2
-	DB	85
-	DB	79
-	DB	240
+	DB	86
+	DB	255
+	DB	223
 	DB	78
 	DB	0
-	DB	36
-	DB	119
-	DB	207
-	DB	74
-	DB	52
 	DB	2
-	DB	9
-	DB	61
-	DB	207
-	DB	192
+	DB	70
+	DB	255
+	DB	243
+	DB	74
+	DB	64
+	DB	2
+	DB	146
+	DB	223
+	DB	92
 	DB	76
-	DB	155
-	DB	207
-	DB	196
-	DB	43
-	DB	43
 	DB	9
 	DB	188
 	DB	207
-	DB	35
+	DB	42
 	DB	64
-	DB	35
+	DB	42
 	DB	155
-	DB	255
-	DB	16
-	DB	62
 	DB	207
-	DB	79
-	DB	0
-	DB	6
-	DB	181
-	DB	159
-	DB	60
-	DB	61
-	DB	74
-	DB	79
-	DB	8
-	DB	88
-	DB	0
-	DB	55
-	DB	79
-	DB	158
-	DB	62
+	DB	196
+	DB	34
+	DB	34
 	DB	9
-	DB	17
+	DB	177
+	DB	255
+	DB	3
+	DB	236
+	DB	79
+	DB	240
+	DB	0
+	DB	107
+	DB	159
+	DB	83
+	DB	196
+	DB	61
+	DB	165
+	DB	79
+	DB	7
+	DB	0
+	DB	131
+	DB	121
+	DB	79
+	DB	224
+	DB	62
+	DB	153
 	DB	79
 	DB	3
-	DB	144
+	DB	17
 	DB	0
-	DB	32
-	DB	163
-	DB	79
-	DB	19
-	DB	32
-	DB	0
-	DB	150
+	DB	2
+	DB	42
 	DB	79
 	DB	4
-	DB	105
+	DB	34
 	DB	0
+	DB	9
 	DB	224
 	DB	79
-	DB	74
+	DB	70
 	DB	0
-	DB	128
-	DB	161
+	DB	158
 	DB	79
-	DB	129
-	DB	58
+	DB	4
+	DB	168
+	DB	0
+	DB	10
+	DB	24
+	DB	79
+	DB	19
+	DB	160
 	DB	0
 	DB	0
-	DB	1
+	DB	16
 	XDEF _map4_compressed
-;    1	unsigned char map4_compressed[187] = 
+;    1	unsigned char map4_compressed[188] = 
 ;    2	{ 
 	END
