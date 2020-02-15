@@ -1,0 +1,33 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -optsize -noreduceopt -nomodsect -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"SRC\GFX\ARROW.C"
+	.assume ADL=1
+	SEGMENT DATA
+_arrow_compressed:
+	DB	20
+	DB	17
+	DB	4
+	DB	44
+	DB	1
+	DB	236
+	DB	0
+	DB	0
+	DB	2
+	DB	44
+	DB	32
+	DB	142
+	DB	0
+	DB	33
+	DB	0
+	DB	0
+	DB	56
+	DB	19
+	DB	78
+	DB	59
+	DB	0
+	DB	1
+	XDEF _arrow_compressed
+;    1	unsigned char arrow_compressed[22] = 
+;    2	{ 
+	END

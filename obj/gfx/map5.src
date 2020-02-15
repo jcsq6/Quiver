@@ -8,7 +8,7 @@ _map5_compressed:
 	DB	80
 	DB	32
 	DB	60
-	DB	7
+	DB	54
 	DB	15
 	DB	13
 	DB	0

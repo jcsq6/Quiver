@@ -6,7 +6,7 @@
 # ----------------------------
 
 NAME        ?= QUIVER
-COMPRESSED  ?= NO
+COMPRESSED  ?= YES
 ICON        ?= icon.png
 DESCRIPTION ?= "game"
 

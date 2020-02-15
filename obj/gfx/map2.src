@@ -8,7 +8,7 @@ _map2_compressed:
 	DB	80
 	DB	32
 	DB	60
-	DB	8
+	DB	57
 	DB	5
 	DB	78
 	DB	0
@@ -40,12 +40,12 @@ _map2_compressed:
 	DB	191
 	DB	52
 	DB	0
-	DB	28
+	DB	29
 	DB	0
 	DB	0
 	DB	123
 	DB	69
-	DB	27
+	DB	28
 	DB	0
 	DB	158
 	DB	19
@@ -54,7 +54,7 @@ _map2_compressed:
 	DB	248
 	DB	41
 	DB	79
-	DB	26
+	DB	27
 	DB	199
 	DB	0
 	DB	195
@@ -174,7 +174,7 @@ _map2_compressed:
 	DB	20
 	DB	33
 	DB	79
-	DB	29
+	DB	26
 	DB	38
 	DB	0
 	DB	70
@@ -210,7 +210,7 @@ _map2_compressed:
 	DB	9
 	DB	191
 	DB	0
-	DB	33
+	DB	34
 	DB	196
 	DB	0
 	DB	193
