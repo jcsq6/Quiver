@@ -525,8 +525,8 @@ L__2:
 	LD	A,(IX+-62)
 	OR	A,A
 	JR	NZ,L_5
-;  148				if(mapNum == 5) mapNum = 0;
-	LD	BC,5
+;  148				if(mapNum == 7) mapNum = 0;
+	LD	BC,7
 	LD	HL,(IX+-9)
 	OR	A,A
 	SBC	HL,BC
@@ -609,14 +609,14 @@ L_3:
 	POP	BC
 	POP	BC
 ;  157	
-;  158				gfx_SetColor(0);
+;  158	
+;  159				gfx_SetColor(0);
 	LD	BC,0
 	PUSH	BC
 	CALL	_gfx_SetColor
 	POP	BC
-;  159			}
+;  160			}
 L_5:
-;  160	
 ;  161	
 ;  162			gfx_PrintStringXY("Map1", 20, 0);
 	LD	BC,0
@@ -673,8 +673,7 @@ L_5:
 	POP	BC
 	POP	BC
 ;  167	
-;  168	
-;  169			if(mapNum == 1)	gfx_FillRectangle(0, 0, 4, 4);
+;  168			if(mapNum == 1)	gfx_FillRectangle(0, 0, 4, 4);
 	LD	HL,(IX+-9)
 	LD	BC,1
 	OR	A,A
@@ -691,7 +690,7 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  170			else if(mapNum == 2) gfx_FillRectangle(0, 20, 4, 4);			
+;  169			else if(mapNum == 2) gfx_FillRectangle(0, 20, 4, 4);			
 	JR	L_15
 L_14:
 	LD	BC,2
@@ -711,7 +710,7 @@ L_14:
 	POP	BC
 	POP	BC
 	POP	BC
-;  171			else if(mapNum == 3) gfx_FillRectangle(0, 40, 4, 4);
+;  170			else if(mapNum == 3) gfx_FillRectangle(0, 40, 4, 4);
 	JR	L_15
 L_12:
 	LD	BC,3
@@ -731,7 +730,7 @@ L_12:
 	POP	BC
 	POP	BC
 	POP	BC
-;  172			else if(mapNum == 4) gfx_FillRectangle(0, 60, 4, 4);
+;  171			else if(mapNum == 4) gfx_FillRectangle(0, 60, 4, 4);
 	JR	L_15
 L_10:
 	LD	BC,4
@@ -750,7 +749,7 @@ L_10:
 	POP	BC
 	POP	BC
 	POP	BC
-;  173			else if(mapNum == 5) gfx_FillRectangle(0, 80, 4, 4);
+;  172			else if(mapNum == 5) gfx_FillRectangle(0, 80, 4, 4);
 	JR	L_15
 L_8:
 	LD	BC,5
@@ -771,26 +770,26 @@ L_8:
 	POP	BC
 	POP	BC
 L_15:
-;  174	
-;  175			prevkey = key;
+;  173	
+;  174			prevkey = key;
 	LD	A,(IX+-30)
 	LD	(IX+-62),A
-;  176	
-;  177			dbg_ClearConsole();
-;  178			dbg_sprintf(dbgout, "%d", mapNum);
-;  179		}
+;  175	
+;  176			dbg_ClearConsole();
+;  177			dbg_sprintf(dbgout, "%d", mapNum);
+;  178		}
 L_17:
 	LD	A,(16056348)
 	AND	A,1
 	JR	Z,L_18
-;  180	
-;  181		if(mapNum == 1)	{
+;  179	
+;  180		if(mapNum == 1)	{
 	LD	BC,1
 	LD	HL,(IX+-9)
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_27
-;  182			zx7_Decompress( map, map1_compressed );
+;  181			zx7_Decompress( map, map1_compressed );
 	LD	BC,_map1_compressed
 	PUSH	BC
 	LD	BC,(IX+-25)
@@ -798,14 +797,14 @@ L_17:
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  183			hero.x = 0;
+;  182			hero.x = 0;
 	LD	BC,0
 	LD	(_hero),BC
-;  184			hero.y = 150;
+;  183			hero.y = 150;
 	LD	BC,150
 	LD	(_hero+3),BC
-;  185		}
-;  186		else if(mapNum == 2) {
+;  184		}
+;  185		else if(mapNum == 2) {
 	JR	L_29
 L_27:
 	LD	BC,2
@@ -813,7 +812,7 @@ L_27:
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_25
-;  187			zx7_Decompress( map, map2_compressed );		
+;  186			zx7_Decompress( map, map2_compressed );		
 	LD	BC,_map2_compressed
 	PUSH	BC
 	LD	BC,(IX+-25)
@@ -821,14 +820,14 @@ L_27:
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  188			hero.x = 0;
+;  187			hero.x = 0;
 	LD	BC,0
 	LD	(_hero),BC
-;  189			hero.y = 180;
+;  188			hero.y = 180;
 	LD	BC,180
 	LD	(_hero+3),BC
-;  190		}
-;  191		else if(mapNum == 3) {
+;  189		}
+;  190		else if(mapNum == 3) {
 	JR	L_29
 L_25:
 	LD	BC,3
@@ -836,7 +835,7 @@ L_25:
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_23
-;  192			zx7_Decompress( map, map3_compressed );
+;  191			zx7_Decompress( map, map3_compressed );
 	LD	BC,_map3_compressed
 	PUSH	BC
 	LD	BC,(IX+-25)
@@ -844,14 +843,14 @@ L_25:
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  193			hero.x = 0;
+;  192			hero.x = 0;
 	LD	BC,0
 	LD	(_hero),BC
-;  194			hero.y = 180;
+;  193			hero.y = 180;
 	LD	BC,180
 	LD	(_hero+3),BC
-;  195		}
-;  196		else if(mapNum == 4) {
+;  194		}
+;  195		else if(mapNum == 4) {
 	JR	L_29
 L_23:
 	LD	BC,4
@@ -859,7 +858,7 @@ L_23:
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_21
-;  197			zx7_Decompress( map, map4_compressed );
+;  196			zx7_Decompress( map, map4_compressed );
 	LD	BC,_map4_compressed
 	PUSH	BC
 	LD	BC,(IX+-25)
@@ -867,14 +866,14 @@ L_23:
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  198			hero.x = 50;
+;  197			hero.x = 50;
 	LD	BC,50
 	LD	(_hero),BC
-;  199			hero.y = 100;
+;  198			hero.y = 100;
 	LD	BC,100
 	LD	(_hero+3),BC
-;  200		}		
-;  201		else if(mapNum == 5) {
+;  199		}		
+;  200		else if(mapNum == 5) {
 	JR	L_29
 L_21:
 	LD	BC,5
@@ -882,7 +881,7 @@ L_21:
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_29
-;  202			zx7_Decompress( map, map5_compressed );
+;  201			zx7_Decompress( map, map5_compressed );
 	LD	BC,_map5_compressed
 	PUSH	BC
 	LD	BC,(IX+-25)
@@ -890,14 +889,15 @@ L_21:
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  203			hero.x = 80;
+;  202			hero.x = 80;
 	LD	BC,80
 	LD	(_hero),BC
-;  204			hero.y = 180;
+;  203			hero.y = 180;
 	LD	BC,180
 	LD	(_hero+3),BC
-;  205		}
+;  204		}
 L_29:
+;  205	
 ;  206		
 ;  207	
 ;  208		gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);

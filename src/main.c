@@ -145,7 +145,7 @@ void main(void) {
    		key = kb_Data[7] == kb_Down;
 
 		if(key && !prevkey) {
-			if(mapNum == 5) mapNum = 0;
+			if(mapNum == 7) mapNum = 0;
 			mapNum++;
 			gfx_SetColor(1);
 
@@ -155,16 +155,15 @@ void main(void) {
 			gfx_FillRectangle(0, 60, 4, 4);
 			gfx_FillRectangle(0, 80, 4, 4);
 
+
 			gfx_SetColor(0);
 		}
-
 
 		gfx_PrintStringXY("Map1", 20, 0);
 		gfx_PrintStringXY("Map2", 20, 20);
 		gfx_PrintStringXY("Map3", 20, 40);
 		gfx_PrintStringXY("Map4", 20, 60);
 		gfx_PrintStringXY("Map5", 20, 80);
-
 
 		if(mapNum == 1)	gfx_FillRectangle(0, 0, 4, 4);
 		else if(mapNum == 2) gfx_FillRectangle(0, 20, 4, 4);			
@@ -203,6 +202,7 @@ void main(void) {
 		hero.x = 80;
 		hero.y = 180;
 	}
+
 	
 
 	gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);

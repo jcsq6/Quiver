@@ -1,0 +1,136 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -debug -optsize -noreduceopt -nomodsect -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"SRC\GFX\MAP6.C"
+	.assume ADL=1
+.DEBUG "C"
+	SEGMENT DATA
+_map6_compressed:
+	DB	80
+	DB	32
+	DB	60
+	DB	56
+	DB	9
+	DB	249
+	DB	0
+	DB	58
+	DB	0
+	DB	79
+	DB	200
+	DB	0
+	DB	57
+	DB	4
+	DB	249
+	DB	0
+	DB	0
+	DB	113
+	DB	0
+	DB	243
+	DB	15
+	DB	198
+	DB	0
+	DB	67
+	DB	25
+	DB	243
+	DB	32
+	DB	56
+	DB	25
+	DB	17
+	DB	0
+	DB	203
+	DB	20
+	DB	15
+	DB	184
+	DB	4
+	DB	248
+	DB	25
+	DB	126
+	DB	32
+	DB	120
+	DB	25
+	DB	9
+	DB	248
+	DB	79
+	DB	19
+	DB	134
+	DB	191
+	DB	2
+	DB	124
+	DB	175
+	DB	208
+	DB	59
+	DB	2
+	DB	219
+	DB	196
+	DB	0
+	DB	220
+	DB	242
+	DB	59
+	DB	19
+	DB	5
+	DB	17
+	DB	79
+	DB	27
+	DB	146
+	DB	14
+	DB	192
+	DB	19
+	DB	64
+	DB	162
+	DB	79
+	DB	3
+	DB	32
+	DB	0
+	DB	242
+	DB	79
+	DB	33
+	DB	0
+	DB	4
+	DB	17
+	DB	0
+	DB	4
+	DB	227
+	DB	191
+	DB	29
+	DB	243
+	DB	208
+	DB	196
+	DB	29
+	DB	19
+	DB	206
+	DB	54
+	DB	199
+	DB	19
+	DB	67
+	DB	4
+	DB	227
+	DB	201
+	DB	15
+	DB	192
+	DB	54
+	DB	80
+	DB	192
+	DB	79
+	DB	156
+	DB	191
+	DB	48
+	DB	19
+	DB	72
+	DB	0
+	DB	5
+	DB	14
+	DB	232
+	DB	0
+	DB	0
+	DB	4
+.DEFINE "map6_compressed"
+.ALIAS "_map6_compressed"
+.CLASS 69
+.VALUE _map6_compressed
+.DIM 117
+.TYPE 108
+.ENDEF
+	XDEF _map6_compressed
+;    1	unsigned char map6_compressed[117] = 
+;    2	{ 
+	END
