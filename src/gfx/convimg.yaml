@@ -32,3 +32,4 @@ convert: sprites
     - map3
     - map4
     - map5
+    - arrow

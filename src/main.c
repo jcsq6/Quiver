@@ -22,6 +22,10 @@ enum direction{
 	left,
 	up,
 	down,
+	upLeft,
+	upRight,
+	downLeft,
+	downRight,
 	nothing
 };
 
@@ -36,25 +40,20 @@ gfx_point_t hero;
 
 void main(void) {
 
-	int x;
-	int y;
-
-	int i;
-
-	int mapNum;
-
-	int velocity;
+	int x, y, i, mapNum, velocity;
 
 	gfx_point_t lastStill;
+	gfx_point_t arrow, arrowInit;
 
 	gfx_sprite_t *map;
 
 	gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2;
 
-	double distance;
+	double distance, arrowDistance;
 	unsigned int step;
 
 	enum direction jumpingDir;
+	enum direction shootingDir;
 
 	bool doubleJumped, keyIsReleased, inLadder, facingRight, ascending, key, prevkey, isBoosted, tempBool1, tempBool2;
 
@@ -103,7 +102,6 @@ void main(void) {
 	gfx_FlipSpriteY(HeroJumpRight2, HeroJumpLeft2);
 	gfx_FlipSpriteY(HeroJumpUpRight, HeroJumpUpLeft);
 
-
 	velocity = 2;
 
 	jumpingDir = nothing;
@@ -128,6 +126,8 @@ void main(void) {
 
 	lastStill.x = hero.x;
 	lastStill.y = hero.y;
+
+	shootingDir = nothing;
 
 	srand(rtc_Time());
 
@@ -203,8 +203,6 @@ void main(void) {
 		hero.y = 180;
 	}
 
-	
-
 	gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
 
 	gfx_SetDrawBuffer();
@@ -221,6 +219,59 @@ void main(void) {
 	while(!(kb_Data[6] & kb_Clear)){
 
 		kb_Scan();
+
+		if(shootingDir == nothing && kb_Data[7] & kb_Right) {
+			shootingDir = right;
+			arrow.x = hero.x + 15;
+			arrow.y = hero.y + 4;
+			arrowInit.x = hero.x + 15;
+			arrowInit.y = hero.y + 4;
+		}
+		if(shootingDir == nothing && kb_Data[7] & kb_Left) {
+			shootingDir = left;
+			arrow.x = hero.x;
+			arrow.y = hero.y + 4;
+			arrowInit.x = hero.x;
+			arrowInit.y = hero.y + 4;
+		}
+		if(shootingDir == nothing && kb_Data[7] & kb_Up && kb_Data[7] & kb_Left){
+			shootingDir = upLeft;
+			arrow.x = hero.x;
+			arrow.y = hero.y + 4;
+			arrowInit.x = hero.x;
+			arrowInit.y = hero.y + 4;
+		}
+		if(shootingDir == nothing && kb_Data[7] & kb_Up && kb_Data[7] & kb_Right) {
+			shootingDir = upRight;
+			arrow.x = hero.x + 15;
+			arrow.y = hero.y + 4;
+			arrowInit.x = hero.x + 15;
+			arrowInit.y = hero.y + 4;
+		}
+		if(shootingDir == nothing && kb_Data[7] & kb_Down && kb_Data[7] & kb_Left) {
+			shootingDir = downLeft;
+			arrow.x = hero.x;
+			arrow.y = hero.y + 4;
+			arrowInit.x = hero.x;
+			arrowInit.y = hero.y + 4;
+		}
+		if(shootingDir == nothing && kb_Data[7] & kb_Down && kb_Data[7] & kb_Right) {
+			shootingDir = downRight;
+			arrow.x = hero.x + 15;
+			arrow.y = hero.y + 4;
+			arrowInit.x = hero.x + 15;
+			arrowInit.y = hero.y + 4;
+		}
+
+		if(shootingDir == right){
+			arrow.x += 5;
+			arrowDistance = arrow.x - arrowInit.x;
+			if(arrowDistance < 10) arrow.y = arrowInit.y + floor(.1*(arrowDistance - 10)*(arrowDistance - 10)+10);
+			if(arrowDistance >= 10 && arrowDistance < 50) y = arrowInit.y + 10;
+			if(arrowDistance >= 50) arrow.y = arrowInit.y + floor(.002*(arrowDistance - 50)*(arrowDistance - 50) + 10);
+			gfx_FillRectangle(arrow.x, arrow.y, 2, 2);
+		}
+
 
 		tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0);
 		tempBool2 = isTouching(bottomFeet, false, 0, 0);
@@ -239,13 +290,13 @@ void main(void) {
 		gfx_BlitBuffer();
 		//while(!os_GetCSC());
 
-		if((((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode) && !isTouching(rightSide, false, 0, 1)) || ((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd) && !isTouching(leftSide, false, 0, -1))) && !(((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode)) && ((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
+		if(((kb_Data[1] & kb_Mode && !isTouching(rightSide, false, 0, 1)) || (kb_Data[1] & kb_2nd && !isTouching(leftSide, false, 0, -1))) && !((kb_Data[1] & kb_Mode) && (kb_Data[1] & kb_2nd)) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 			//IF RIGHT IS PRESSED
-			if(kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode) {
+			if(kb_Data[1] & kb_Mode) {
 				facingRight = true;
-				if(kb_Data[7] & kb_Up && !inLadder) {
+				if(((kb_Data[7] & kb_Up && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
 					jumpingDir = right;
 					ascending = true;
 					keyIsReleased = false;
@@ -256,9 +307,9 @@ void main(void) {
 				hero.x += 2;
 			};
 			//IF LEFT IS PRESSED
-			if(kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd){ 
+			if(kb_Data[1] & kb_2nd){ 
 				facingRight = false;
-				if(kb_Data[7] & kb_Up && !inLadder) {
+				if(((kb_Data[7] & kb_Up && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
 					jumpingDir = left;
 					ascending = true;
 					keyIsReleased = false;
@@ -272,8 +323,6 @@ void main(void) {
 
 			//IF IS IN AIR
 			if(!tempBool2 && !inLadder){
-					//gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
-
 					if(!tempBool1)	hero.y += velocity;
 					else if(!tempBool2 && tempBool1) hero.y++;
 
@@ -299,13 +348,13 @@ void main(void) {
 
 			gfx_GetSprite(behind_sprite, hero.x, hero.y);
 
-			if(kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode){
+			if(kb_Data[1] & kb_Mode){
 				distance = hero.x - lastStill.x;
 				step = floor(distance/6);
 
 				gfx_TransparentSprite_NoClip(heroRunRight[ step % 3 ], hero.x, hero.y);
 			}
-			if(kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd){
+			if(kb_Data[1] & kb_2nd){
 				distance = lastStill.x - hero.x;
 				step = floor(distance/6);
 
@@ -316,13 +365,11 @@ void main(void) {
 		//IF NOTHING IS PRESSED
 		else{
 
-			//if(velocity % 2 != 0) velocity++;
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 
 			//IF IS IN AIR
 			if(!tempBool2 && !inLadder && !ascending){
-					//gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 					if(!tempBool1)	hero.y += velocity;
 					else if(!tempBool2 && tempBool1) hero.y++;
@@ -332,39 +379,52 @@ void main(void) {
 					gfx_GetSprite(behind_sprite, hero.x, hero.y);
 			}
 			else if(tempBool2 && !inLadder && !ascending){
-				if(tempBool2) {
-					jumpingDir = nothing;
-					doubleJumped = false;
-				}
+				jumpingDir = nothing;
+				doubleJumped = false;
+				keyIsReleased = false;
 				if(isTouching(bottomFeet, true, 0, 0)) {
 					isBoosted = true;
 					ascending = true;
 					jumpingDir = nothing;
 					lastStill.x = hero.x;
 					lastStill.y = hero.y;
+					doubleJumped = false;
 				}	
 			}
 
+			//IF ASCENDING
+			if(ascending){
+				inLadder = false;
+				if(!isBoosted) velocity = -2;
+				else velocity = -10;
+
+				if(!isTouching(topHead, false, velocity + 1, 0)) hero.y += velocity;
+				if(((lastStill.y - hero.y > 25 && !isBoosted) || (lastStill.y - hero.y > 160 && isBoosted)) || isTouching(topHead, false, velocity + 1, 0)) {
+					ascending = false;
+					isBoosted = false;
+					lastStill.x = hero.x;
+					lastStill.y = hero.y;
+				}
+				gfx_GetSprite(behind_sprite, hero.x, hero.y);
+			}
+
 			//MOVING LADDER
-			if(inLadder && kb_Data[7] & kb_Up){
+			if(inLadder && (((kb_Data[7] & kb_Up && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 				hero.y -= 2;
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
-
-				//inLadder = false;
-				//if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2)) inLadder = true;
 			}
-			else if(inLadder && kb_Data[7] & kb_Down){
+			else if(inLadder && ((kb_Data[7] & kb_Down && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right)))){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 				if(hero.y != 140 && mapNum == 1 || mapNum != 1 && hero.y != 200) hero.y += 2;
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
-
-				//inLadder = false;
-				//if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2)) inLadder = true;
 			}
+
+			if(!((((kb_Data[7] & kb_Up && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && !keyIsReleased  && !doubleJumped && jumpingDir != nothing) keyIsReleased = true;
+
 			
 			//CHECK FOR JUMPING UP
-			if((kb_Data[7] & kb_Up) && jumpingDir == nothing && !doubleJumped && !inLadder) {
+			if(((((kb_Data[7] & kb_Up && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && !(kb_Data[7] & kb_Left) && !(kb_Data[7] & kb_Right))) && !doubleJumped && !inLadder && ((keyIsReleased && jumpingDir != nothing) || (!keyIsReleased && jumpingDir == nothing))) {
 				jumpingDir = up;
 				isBoosted = false;
 				ascending = true;
@@ -397,29 +457,8 @@ void main(void) {
 			else if(jumpingDir == right){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(!(kb_Data[7] & kb_Up) && !keyIsReleased) {
-					keyIsReleased = true;
-				}
-
-				if(kb_Data[7] & kb_Up && keyIsReleased && !doubleJumped){
-					lastStill.x = hero.x;
-					lastStill.y = hero.y;
-					jumpingDir = up;
-					ascending = true;
-					doubleJumped = true;
-				}
-
 				if(hero.x - lastStill.x <= 50 && !isTouching(rightSide, false, 0, 1)) hero.x += 2;
 				else if(hero.x - lastStill.x > 50 && hero.x - lastStill.x <= 65 && !isTouching(rightSide, false, 0, 0)) hero.x++;
-
-				if(ascending){
-					hero.y -= 2;
-					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, -1, 0)) {
-						ascending = false;
-						lastStill.x = hero.x;
-						lastStill.y = hero.y;
-					}
-				}
 
 				if(hero.x > 300) hero.x = 300;
 
@@ -435,28 +474,9 @@ void main(void) {
 			else if(jumpingDir == left){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(!(kb_Data[7] & kb_Up) && !keyIsReleased && !doubleJumped) {
-					keyIsReleased = true;
-				}
-
-				if(kb_Data[7] & kb_Up && keyIsReleased){
-					lastStill.x = hero.x;
-					lastStill.y = hero.y;
-					jumpingDir = up;
-					doubleJumped = true;
-					ascending = true;
-				}
-
 				if(lastStill.x - hero.x <= 50 && !isTouching(leftSide, false, 0, -1)) hero.x -= 2;
 				else if(lastStill.x - hero.x > 50 && lastStill.x - hero.x <= 65 && !isTouching(leftSide, false, 0, 0)) hero.x--;
-				if(ascending){
-					hero.y -= 2;
-					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, -1, 0)) {
-						lastStill.x = hero.x;
-						lastStill.y = hero.y;
-						ascending = false;
-					}
-				}
+
 				if(hero.x < 0) hero.x = 0;
 
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
@@ -469,34 +489,13 @@ void main(void) {
 			else if(jumpingDir == up){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(!(kb_Data[7] & kb_Up) && !keyIsReleased  && !doubleJumped) {
-					keyIsReleased = true;
-				}
-
-				if(kb_Data[7] & kb_Up && keyIsReleased && !doubleJumped){
-					lastStill.x = hero.x;
-					lastStill.y = hero.y;
-					jumpingDir = up;
-					doubleJumped = true;
-					ascending = true;
-				}
-
-				if(((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd)) && !isTouching(leftSide, false, 0, 0)) {
+				if((kb_Data[1] & kb_2nd) && !isTouching(leftSide, false, 0, 0)) {
 					hero.x--;
 					facingRight = false;
 				}
-				if((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode) && !isTouching(rightSide, false, 0, 0)) {
+				if(kb_Data[1] & kb_Mode && !isTouching(rightSide, false, 0, 0)) {
 					hero.x++;
 					facingRight = true;
-				}
-
-				if(ascending){
-					hero.y -= 2;
-					if(lastStill.y - hero.y > 25 || isTouching(topHead, false, -1, 0)) {
-						ascending = false;
-						lastStill.x = hero.x;
-						lastStill.y = hero.y;
-					}
 				}
 
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
@@ -508,35 +507,13 @@ void main(void) {
 			else if(isBoosted){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				//if(kb_Data[7] & kb_Up && !ascending){
-				//	lastStill.x = hero.x;
-				//	lastStill.y = hero.y;
-				//	jumpingDir = up;
-				//	isBoosted = false;
-				//	doubleJumped = true;
-				//	ascending = true;
-				//	keyIsReleased = true;
-				//}
-
-				if(((kb_Data[7] & kb_Left || kb_Data[1] & kb_2nd)) && !isTouching(leftSide, false, 0, 0)) {
+				if((kb_Data[1] & kb_2nd) && !isTouching(leftSide, false, 0, 0)) {
 					hero.x--;
 					facingRight = false;
 				}
-				if((kb_Data[7] & kb_Right || kb_Data[1] & kb_Mode) && !isTouching(rightSide, false, 0, 0)) {
+				if(kb_Data[1] & kb_Mode && !isTouching(rightSide, false, 0, 0)) {
 					hero.x++;
 					facingRight = true;
-				}
-
-				if(ascending){
-					if(lastStill.y - hero.y <= 180 && !isTouching(topHead, false, -9, 0)){
-						hero.y -= 10;
-					}
-					else if(lastStill.y - hero.y > 180 || isTouching(topHead, false, -9, 0)){
-						ascending = false;
-						lastStill.x = hero.x;
-						lastStill.y = hero.y;
-						isBoosted = false;
-					}
 				}
 
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
