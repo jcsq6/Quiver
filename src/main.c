@@ -15,7 +15,8 @@
 
 #include "gfx/gfx.h"
 
-bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity);
+bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity, int x, int y);
+void establishBoundaries(int numOfMap);
 
 enum direction{
 	right,
@@ -37,6 +38,9 @@ enum bodyParts{
 };
 
 gfx_point_t hero;
+gfx_point_t enemy;
+
+bool boundaries[60][80];
 
 void main(void) {
 
@@ -47,7 +51,7 @@ void main(void) {
 
 	gfx_sprite_t *map;
 
-	gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2, *arrowSpr, *behindArrow;
+	gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2, *arrowSpr, *behindArrow, *arrowSprLeft, *arrowSprTiltRight, *arrowSprTiltLeft;
 
 	double distance, arrowDistance;
 	unsigned int step;
@@ -57,7 +61,7 @@ void main(void) {
 
 	bool doubleJumped, keyIsReleased, inLadder, facingRight, ascending, key, prevkey, isBoosted, tempBool1, tempBool2;
 
-	bool alphaKey, leftKey, rightKey, downKey, upKey, modeKey, secondKey, rightKeyNotAlpha, leftKeyNotAlpha, downKeyNotAlpha, upKeyNotAlpha;
+	bool alphaKey, leftKey, rightKey, downKey, upKey, modeKey, secondKey, rightKeyNotAlpha, leftKeyNotAlpha, downKeyNotAlpha, upKeyNotAlpha, alphaReleased, standing, arrowTouchingBottom, arrowTouchingTip;
 
 	gfx_sprite_t *heroRunRight[3];
 	gfx_sprite_t *heroRunLeft[3];
@@ -87,6 +91,9 @@ void main(void) {
 	HeroJumpLeft2 = gfx_MallocSprite(20, 40);
 	behindArrow = gfx_MallocSprite(20, 4);
 	arrowSpr = gfx_MallocSprite(20, 4);
+	arrowSprLeft = gfx_MallocSprite(20, 4);
+	arrowSprTiltLeft = gfx_MallocSprite(20, 4);
+	arrowSprTiltRight = gfx_MallocSprite(20, 4);
 
 
 	zx7_Decompress( HeroStill, HeroStill_compressed );
@@ -106,6 +113,7 @@ void main(void) {
 	gfx_FlipSpriteY(HeroJumpRight1, HeroJumpLeft1);
 	gfx_FlipSpriteY(HeroJumpRight2, HeroJumpLeft2);
 	gfx_FlipSpriteY(HeroJumpUpRight, HeroJumpUpLeft);
+	gfx_FlipSpriteY(arrowSpr, arrowSprLeft);
 
 	velocity = 2;
 
@@ -113,7 +121,7 @@ void main(void) {
 
 	ascending = doubleJumped = inLadder = isBoosted = keyIsReleased = false;
 
-	facingRight = true;
+	facingRight = alphaReleased = standing = true;
 
 	heroRunRight[0] = HeroRight0;
 	heroRunRight[1] = HeroRight1;
@@ -135,6 +143,8 @@ void main(void) {
 	arrow.x = 0;
 	arrow.y = 0;
 
+	arrowDistance = 80;
+
 	shootingDir = nothing;
 
 	srand(rtc_Time());
@@ -153,7 +163,7 @@ void main(void) {
    		key = kb_Data[7] == kb_Down;
 
 		if(key && !prevkey) {
-			if(mapNum == 7) mapNum = 0;
+			if(mapNum == 5) mapNum = 0;
 			mapNum++;
 			gfx_SetColor(1);
 
@@ -219,7 +229,15 @@ void main(void) {
 
 	gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
 
-	gfx_BlitBuffer();
+	gfx_SwapDraw();
+
+	establishBoundaries(mapNum);
+	gfx_SetColor(0);
+	for(x = 0; x < 80; x++){
+		for(y = 0; y < 60; y++){
+			if(boundaries[y][x]) gfx_FillRectangle(x * 4, y * 4, 4, 4);
+		}
+	}
 
 	gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	gfx_GetSprite(behindArrow, arrow.x, arrow.y);
@@ -237,76 +255,118 @@ void main(void) {
 		leftKey = kb_Data[7] & kb_Left;
 		rightKey = kb_Data[7] & kb_Right;
 
-		if(shootingDir == nothing && (alphaKey || kb_Data[3] & kb_0) && (rightKey || leftKey || upKey || downKey)){
-			gfx_Sprite_NoClip(behindArrow, arrow.x, arrow.y);
+		if(shootingDir == nothing && (alphaKey || kb_Data[3] & kb_0) && (rightKey || leftKey) && alphaReleased){
+			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+			gfx_Sprite(behindArrow, arrow.x, arrow.y);
+			gfx_GetSprite(behind_sprite, hero.x, hero.y);
+			
+			alphaReleased = false;
 			if(rightKey) {
+				if(!rightKeyNotAlpha) standing = false;
 				shootingDir = right;
 				arrow.x = hero.x + 20;
 				arrow.y = hero.y + 8;
-				arrowInit.x = hero.x + 15;
+				arrowInit.x = hero.x + 20;
 				arrowInit.y = hero.y + 8;
+				if(arrow.x >= 300){
+					arrow.x -= arrow.x - 301;
+					if(mapNum == 4) arrow.x = 284;
+					shootingDir = nothing;
+					gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+					gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+					gfx_TransparentSprite(arrowSpr, arrow.x, arrow.y);
+					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+					gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+					goto pastDisplaySprite;
+				}
+				else if(mapNum == 4 && arrow.x > 300) arrow.x += arrow.x - 300;
 			}
 			if(leftKey) {
+				if(!leftKeyNotAlpha) standing = false;
 				shootingDir = left;
-				arrow.x = hero.x;
+				arrow.x = hero.x - 20;
 				arrow.y = hero.y + 8;
-				arrowInit.x = hero.x;
+				arrowInit.x = hero.x - 20;
 				arrowInit.y = hero.y + 8;
-			}
-			if(upKey && leftKey){
-				shootingDir = upLeft;
-				arrow.x = hero.x;
-				arrow.y = hero.y + 8;
-				arrowInit.x = hero.x;
-				arrowInit.y = hero.y + 8;
-			}
-			if(upKey && rightKey) {
-				shootingDir = upRight;
-				arrow.x = hero.x + 20;
-				arrow.y = hero.y + 8;
-				arrowInit.x = hero.x + 20;
-				arrowInit.y = hero.y + 8;
-			}
-			if(downKey && leftKey) {
-				shootingDir = downLeft;
-				arrow.x = hero.x;
-				arrow.y = hero.y + 8;
-				arrowInit.x = hero.x;
-				arrowInit.y = hero.y + 8;
-			}
-			if(downKey && rightKey) {
-				shootingDir = downRight;
-				arrow.x = hero.x + 20;
-				arrow.y = hero.y + 8;
-				arrowInit.x = hero.x + 20;
-				arrowInit.y = hero.y + 8;
+				if(arrow.x < 0){
+					arrow.x += 0 - arrow.x;
+					if(mapNum == 4) arrow.x = 20;
+					shootingDir = nothing;
+					gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+					gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+					gfx_TransparentSprite(arrowSprLeft, arrow.x, arrow.y);
+					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+					gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+					goto pastDisplaySprite;
+				}
 			}
 			gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+			pastDisplaySprite:
+				0;
 		}
 		if(shootingDir != nothing){
 			gfx_Sprite_NoClip(behindArrow, arrow.x, arrow.y);
 			if(shootingDir == right){
-				arrow.x += 5;
+				arrow.x += 4;
 				arrowDistance = arrow.x - arrowInit.x;
-				if(arrowDistance < 100) y = arrowInit.y + 10;
-				if(arrowDistance >= 100) arrow.y = arrowInit.y + floor((arrowDistance - 100)*(arrowDistance - 100) / 500 + 10);
+				if(arrowDistance >= 100) arrow.y = arrowInit.y + floor((arrowDistance - 100)*(arrowDistance - 100) / 1000 + 10);
+			}
+			if(shootingDir == left){
+				arrow.x -= 4;
+				arrowDistance = arrowInit.x -  arrow.x;
+				if(arrowDistance >= 100) arrow.y = arrowInit.y + floor((arrowDistance - 100)*(arrowDistance - 100) / 1000 + 10);
 			}
 			gfx_GetSprite(behindArrow, arrow.x, arrow.y);
-			gfx_TransparentSprite_NoClip(arrowSpr, arrow.x, arrow.y);
-			if(gfx_GetPixel(arrow.x+20, arrow.y) == 0 || arrow.x > 300 || arrow.x < 0 || arrow.y < 0 || arrow.y > 240) shootingDir = nothing;
+			if(shootingDir == right) gfx_TransparentSprite(arrowSpr, arrow.x, arrow.y);
+			if(shootingDir == left) gfx_TransparentSprite(arrowSprLeft, arrow.x, arrow.y);
+			for(i = 0; i <= 20; i += 4){
+				arrowTouchingTip = gfx_GetPixel(arrow.x+i, arrow.y - 1) == 0 || gfx_GetPixel(arrow.x+i, arrow.y) == 0 || gfx_GetPixel(arrow.x+i, arrow.y + 1) == 0 || gfx_GetPixel(arrow.x+i, arrow.y + 2) == 0;
+				arrowTouchingBottom = gfx_GetPixel(arrow.x+i, arrow.y + 3) == 0;
+				if(arrowTouchingTip || arrow.x < 0 || arrow.y < 0 || arrow.y > 240 || arrow.x > 300 || arrowTouchingBottom) {
+					//dbg_ClearConsole();
+					//dbg_sprintf(dbgout, "i = %d\n", i);
+					//dbg_sprintf(dbgout, "arrowTouchingTip = %d\n", arrowTouchingTip);
+					//dbg_sprintf(dbgout, "arrowTouchingBottom = %d\n", arrowTouchingBottom);
+					//while(!os_GetCSC());
+					if(shootingDir == right && i <= 16 && !(arrow.x > 300) && !(arrow.x < 0) && !(arrow.y < 0) && !(arrow.y > 240) && arrowTouchingTip && (!arrowTouchingBottom || i >= 3))	{
+						arrow.x -= 20 - i;
+
+						gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+						gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+						gfx_TransparentSprite(arrowSpr, arrow.x, arrow.y);
+						gfx_GetSprite(behind_sprite, hero.x, hero.y);
+						gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+
+					}
+					if(shootingDir == left && i >= 2 && !(arrow.x > 300) && !(arrow.x < 0) && !(arrow.y < 0) && !(arrow.y > 240) && arrowTouchingTip && (!arrowTouchingBottom || i >= 3)) {
+						arrow.x += i;
+
+						gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+						gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+						gfx_TransparentSprite(arrowSprLeft, arrow.x, arrow.y);
+						gfx_GetSprite(behind_sprite, hero.x, hero.y);
+						gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+					}
+					shootingDir = nothing;
+					arrowDistance = 80;
+					if(alphaReleased) standing = true;
+					break;
+				}
+			}
 		}
 
-		rightKeyNotAlpha = (modeKey || rightKey) && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-		leftKeyNotAlpha = (secondKey || leftKey) && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-		downKeyNotAlpha = downKey && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-		upKeyNotAlpha = upKey && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
+		if(!alphaKey && !kb_Data[3] & kb_0 && !alphaReleased) {
+			alphaReleased = true;
+			standing = true;
+		}
+
+		rightKeyNotAlpha = (modeKey || rightKey) && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+		leftKeyNotAlpha = (secondKey || leftKey) && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+		downKeyNotAlpha = downKey && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+		upKeyNotAlpha = upKey && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
 		
-
-		
-
-
-		tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0);
-		tempBool2 = isTouching(bottomFeet, false, 0, 0);
+		tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0, hero.x , hero.y);
+		tempBool2 = isTouching(bottomFeet, false, 0, 0, hero.x , hero.y);
 		velocity = (hero.y - lastStill.y ) / 50 + 2;
 
 		dbg_ClearConsole();
@@ -319,10 +379,11 @@ void main(void) {
 		dbg_sprintf(dbgout, "jumpingDir = %d\n", jumpingDir);
 		dbg_sprintf(dbgout, "tempBool1 = %d\n", tempBool1);
 		dbg_sprintf(dbgout, "tempBool2 = %d\n", tempBool2);
-		gfx_BlitBuffer();
-		//while(!os_GetCSC());
+		dbg_sprintf(dbgout, "shootingDir = %d\n", shootingDir);
+		dbg_sprintf(dbgout, "arrowInit = (%d, %d)\n", arrowInit.x, arrowInit.y);
+		// gfx_BlitBuffer();
 
-		if(((rightKeyNotAlpha && !isTouching(rightSide, false, 0, 1)) || (leftKeyNotAlpha && !isTouching(leftSide, false, 0, -1))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
+		if(((rightKeyNotAlpha && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) || (leftKeyNotAlpha && !isTouching(leftSide, false, 0, -1, hero.x , hero.y))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 			//IF RIGHT IS PRESSED
@@ -358,14 +419,14 @@ void main(void) {
 					if(!tempBool1)	hero.y += velocity;
 					else if(!tempBool2 && tempBool1) hero.y++;
 
-					if(isTouching(rightSide, false, 0, 0)) hero.x--;
-					if(isTouching(leftSide, false, 0, 0)) hero.x++;
+					if(isTouching(rightSide, false, 0, 0, hero.x , hero.y)) hero.x--;
+					if(isTouching(leftSide, false, 0, 0, hero.x , hero.y)) hero.x++;
 			}
 			else if(!inLadder && tempBool2){
 				lastStill.y = hero.y;
 			}
 
-			if(isTouching(bottomFeet, true, 0, 0)) {
+			if(isTouching(bottomFeet, true, 0, 0, hero.x , hero.y)) {
 				isBoosted = true;
 				ascending = true;
 				lastStill.x = hero.x;
@@ -406,15 +467,15 @@ void main(void) {
 					if(!tempBool1)	hero.y += velocity;
 					else if(!tempBool2 && tempBool1) hero.y++;
 
-					if(isTouching(rightSide, false, 0, 0)) hero.x--;
-					if(isTouching(leftSide, false, 0, 0)) hero.x++;
+					if(isTouching(rightSide, false, 0, 0, hero.x , hero.y)) hero.x--;
+					if(isTouching(leftSide, false, 0, 0, hero.x , hero.y)) hero.x++;
 					gfx_GetSprite(behind_sprite, hero.x, hero.y);
 			}
 			else if(tempBool2 && !inLadder && !ascending){
 				jumpingDir = nothing;
 				doubleJumped = false;
 				keyIsReleased = false;
-				if(isTouching(bottomFeet, true, 0, 0)) {
+				if(isTouching(bottomFeet, true, 0, 0, hero.x , hero.y)) {
 					isBoosted = true;
 					ascending = true;
 					jumpingDir = nothing;
@@ -430,8 +491,8 @@ void main(void) {
 				if(!isBoosted) velocity = -2;
 				else velocity = -10;
 
-				if(!isTouching(topHead, false, velocity + 1, 0)) hero.y += velocity;
-				if(((lastStill.y - hero.y > 25 && !isBoosted) || (lastStill.y - hero.y > 160 && isBoosted)) || isTouching(topHead, false, velocity + 1, 0)) {
+				if(!isTouching(topHead, false, velocity + 1, 0, hero.x , hero.y)) hero.y += velocity;
+				if(((lastStill.y - hero.y > 25 && !isBoosted) || (lastStill.y - hero.y > 160 && isBoosted)) || isTouching(topHead, false, velocity + 1, 0, hero.x , hero.y)) {
 					ascending = false;
 					isBoosted = false;
 					lastStill.x = hero.x;
@@ -475,7 +536,7 @@ void main(void) {
 				inLadder = false;
 				if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2 && hero.y >= 120) && jumpingDir == nothing) inLadder = true;
 
-				if(isTouching(bottomFeet, true, 0, 0)) {
+				if(isTouching(bottomFeet, true, 0, 0, hero.x , hero.y)) {
 					isBoosted = true;
 					ascending = true;
 					lastStill.x = hero.x;
@@ -489,8 +550,8 @@ void main(void) {
 			else if(jumpingDir == right){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(hero.x - lastStill.x <= 50 && !isTouching(rightSide, false, 0, 1)) hero.x += 2;
-				else if(hero.x - lastStill.x > 50 && hero.x - lastStill.x <= 65 && !isTouching(rightSide, false, 0, 0)) hero.x++;
+				if(hero.x - lastStill.x <= 50 && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) hero.x += 2;
+				else if(hero.x - lastStill.x > 50 && hero.x - lastStill.x <= 65 && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) hero.x++;
 
 				if(hero.x > 300) hero.x = 300;
 
@@ -506,8 +567,8 @@ void main(void) {
 			else if(jumpingDir == left){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(lastStill.x - hero.x <= 50 && !isTouching(leftSide, false, 0, -1)) hero.x -= 2;
-				else if(lastStill.x - hero.x > 50 && lastStill.x - hero.x <= 65 && !isTouching(leftSide, false, 0, 0)) hero.x--;
+				if(lastStill.x - hero.x <= 50 && !isTouching(leftSide, false, 0, -1, hero.x , hero.y)) hero.x -= 2;
+				else if(lastStill.x - hero.x > 50 && lastStill.x - hero.x <= 65 && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) hero.x--;
 
 				if(hero.x < 0) hero.x = 0;
 
@@ -521,11 +582,11 @@ void main(void) {
 			else if(jumpingDir == up){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0)) {
+				if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x--;
 					facingRight = false;
 				}
-				if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0)) {
+				if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x++;
 					facingRight = true;
 				}
@@ -539,11 +600,11 @@ void main(void) {
 			else if(isBoosted){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0)) {
+				if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x--;
 					facingRight = false;
 				}
-				if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0)) {
+				if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x++;
 					facingRight = true;
 				}
@@ -555,42 +616,87 @@ void main(void) {
 				
 			}
 		}
-
+		gfx_BlitBuffer();
 	}
 
 	gfx_End();
 }
 
-bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity){
+bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity, int x, int y){
 	int f;
 
 	bool check;
 	check = true;
 	if(part == leftSide){
 		for(f = 3; f <= 40; f += 3) {
-			if(gfx_GetPixel(hero.x + 2 + xVelocity, hero.y + f + yVelocity) == 0 || hero.x + xVelocity == 0) return true;
+			if(gfx_GetPixel(x + 2 + xVelocity, y + f + yVelocity) == 0 || x + xVelocity == 0) return true;
 		}
 	}
 	else if(part == rightSide){
 		for(f = 3; f <= 40; f += 3) {
-			if(gfx_GetPixel(hero.x + 17 + xVelocity, hero.y + f + yVelocity) == 0 || hero.x + 20 + xVelocity== 320) return true;
+			if(gfx_GetPixel(x + 17 + xVelocity, y + f + yVelocity) == 0 || x + 20 + xVelocity== 320) return true;
 		}
 	}
 	else if(part == topHead){
 		for(f = 3; f <= 16; f += 3) {
-			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + yVelocity) == 0 || hero.y + yVelocity < 0) return true;
+			if(gfx_GetPixel(x + f + xVelocity, y + yVelocity) == 0 || y + yVelocity < 0) return true;
 		}
 	}
 	else if(part == bottomFeet && !checkForPad){
 		for(f = 6; f <= 14; f += 3) {
-			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 0 || hero.y + 41 + yVelocity > 240 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) return true;
+			if(gfx_GetPixel(x + f + xVelocity, y + 40 + yVelocity) == 0 || y + 41 + yVelocity > 240 || gfx_GetPixel(x + f + xVelocity, y + 40 + yVelocity) == 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) return true;
 		}
 	}
 	else if(part == bottomFeet && checkForPad){
 		for(f = 6; f <= 14; f += 3) {
-			if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 41 + yVelocity) != 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) check = false;
+			if(gfx_GetPixel(x + f + xVelocity, y + 41 + yVelocity) != 3 || gfx_GetPixel(x + f + xVelocity, y + 40 + yVelocity) == 4) check = false;
 		}
 		return check;
 	}
 	return false;
 }	
+void establishBoundaries(int numOfMap){
+	int x;
+	int y;
+
+	int color;
+
+	int map1colors[4] = {0, 5, 6, 7};
+	int map2colors[9] = {0, 8, 9, 10, 11, 12, 13, 14, 15};
+	int map3colors[2] = {0, 16};
+	int map4colors[3] = {0, 17, 18};
+	int map5colors[3] = {0, 19, 20};
+
+	for(x = 0; x < 320; x += 4){
+		for(y = 0; y < 240; y += 4){
+			boundaries[y/4][x/4] = false;
+			switch(numOfMap){
+				case 1:
+					for(color = 0; color < 4; color++) {
+						if(gfx_GetPixel(x, y) == 5)	boundaries[y / 4][x / 4] = true; 
+					}
+					break;
+				case 2:
+					for(color = 0; color < 9; color++) {
+						if(gfx_GetPixel(x, y) == map2colors[color])	boundaries[y / 4][x / 4] = true; 
+					}
+					break;
+				case 3:
+					for(color = 0; color < 2; color++) {
+						if(gfx_GetPixel(x, y) == map3colors[color])	boundaries[y / 4][x / 4] = true; 
+					}
+					break;
+				case 4:
+					for(color = 0; color < 3; color++) {
+						if(gfx_GetPixel(x, y) == map4colors[color])	boundaries[y / 4][x / 4] = true;
+					}
+					break;
+				case 5:
+					for(color = 0; color < 3; color++) {
+						if(gfx_GetPixel(x, y) == map5colors[color])	boundaries[y / 4][x / 4] = true; 
+					}
+					break;
+			}
+		}
+	}
+}

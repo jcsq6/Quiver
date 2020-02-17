@@ -6,6 +6,10 @@
 	SEGMENT BSS
 _hero:
 	DS	6
+_enemy:
+	DS	6
+_boundaries:
+	DS	4800
 ;    1	#include <stdbool.h>
 ;    2	#include <stddef.h>
 ;    3	#include <stdint.h>
@@ -23,64 +27,68 @@ _hero:
 ;   15	
 ;   16	#include "gfx/gfx.h"
 ;   17	
-;   18	bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity);
-;   19	
-;   20	enum direction{
-;   21		right,
-;   22		left,
-;   23		up,
-;   24		down,
-;   25		upLeft,
-;   26		upRight,
-;   27		downLeft,
-;   28		downRight,
-;   29		nothing
-;   30	};
-;   31	
-;   32	enum bodyParts{
-;   33		leftSide,
-;   34		rightSide,
-;   35		topHead,
-;   36		bottomFeet
-;   37	};
-;   38	
-;   39	gfx_point_t hero;
-	SEGMENT CODE
-;   40	
-;   41	void main(void) {
-_main:
-	LD	HL,-185
-	CALL	__frameset
+;   18	bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity, int x, int y);
+;   19	void establishBoundaries(int numOfMap);
+;   20	
+;   21	enum direction{
+;   22		right,
+;   23		left,
+;   24		up,
+;   25		down,
+;   26		upLeft,
+;   27		upRight,
+;   28		downLeft,
+;   29		downRight,
+;   30		nothing
+;   31	};
+;   32	
+;   33	enum bodyParts{
+;   34		leftSide,
+;   35		rightSide,
+;   36		topHead,
+;   37		bottomFeet
+;   38	};
+;   39	
+;   40	gfx_point_t hero;
+;   41	gfx_point_t enemy;
 ;   42	
-;   43		int x, y, i, mapNum, velocity;
+;   43	bool boundaries[60][80];
+	SEGMENT CODE
 ;   44	
-;   45		gfx_point_t lastStill;
-;   46		gfx_point_t arrow, arrowInit;
-;   47	
-;   48		gfx_sprite_t *map;
-;   49	
-;   50		gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2, *arrowSpr, *behindArrow;
+;   45	void main(void) {
+_main:
+	LD	HL,-221
+	CALL	__frameset
+;   46	
+;   47		int x, y, i, mapNum, velocity;
+;   48	
+;   49		gfx_point_t lastStill;
+;   50		gfx_point_t arrow, arrowInit;
 ;   51	
-;   52		double distance, arrowDistance;
-;   53		unsigned int step;
-;   54	
-;   55		enum direction jumpingDir;
-;   56		enum direction shootingDir;
-;   57	
-;   58		bool doubleJumped, keyIsReleased, inLadder, facingRight, ascending, key, prevkey, isBoosted, tempBool1, tempBool2;
-;   59	
-;   60		bool alphaKey, leftKey, rightKey, downKey, upKey, modeKey, secondKey, rightKeyNotAlpha, leftKeyNotAlpha, downKeyNotAlpha, upKeyNotAlpha;
+;   52		gfx_sprite_t *map;
+;   53	
+;   54		gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2, *arrowSpr, *behindArrow, *arrowSprLeft, *arrowSprTiltRight, *arrowSprTiltLeft;
+;   55	
+;   56		double distance, arrowDistance;
+;   57		unsigned int step;
+;   58	
+;   59		enum direction jumpingDir;
+;   60		enum direction shootingDir;
 ;   61	
-;   62		gfx_sprite_t *heroRunRight[3];
-;   63		gfx_sprite_t *heroRunLeft[3];
-;   64	
-;   65		gfx_sprite_t *heroJumpRight[3];
-;   66	
-;   67		gfx_sprite_t *behind_sprite;
+;   62		bool doubleJumped, keyIsReleased, inLadder, facingRight, ascending, key, prevkey, isBoosted, tempBool1, tempBool2;
+;   63	
+;   64		bool alphaKey, leftKey, rightKey, downKey, upKey, modeKey, secondKey, rightKeyNotAlpha, leftKeyNotAlpha, downKeyNotAlpha, upKeyNotAlpha, alphaReleased, standing, arrowTouchingBottom, arrowTouchingTip;
+;   65	
+;   66		gfx_sprite_t *heroRunRight[3];
+;   67		gfx_sprite_t *heroRunLeft[3];
 ;   68	
-;   69		gfx_sprite_t *tempPerson;
+;   69		gfx_sprite_t *heroJumpRight[3];
 ;   70	
-;   71		map = gfx_MallocSprite(80, 60);
+;   71		gfx_sprite_t *behind_sprite;
+;   72	
+;   73		gfx_sprite_t *tempPerson;
+;   74	
+;   75		map = gfx_MallocSprite(80, 60);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,60
@@ -91,9 +99,9 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-47),HL
-;   72	
-;   73		HeroStill = gfx_MallocSprite(20, 40);
+	LD	(IX+-35),HL
+;   76	
+;   77		HeroStill = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -104,8 +112,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-77),HL
-;   74		HeroLeft0 = gfx_MallocSprite(20, 40);
+	LD	(IX+-51),HL
+;   78		HeroLeft0 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -116,8 +124,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-98),HL
-;   75		HeroLeft1 = gfx_MallocSprite(20, 40);
+	LD	(IX+-118),HL
+;   79		HeroLeft1 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -128,8 +136,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-101),HL
-;   76		HeroLeft2 = gfx_MallocSprite(20, 40);
+	LD	(IX+-121),HL
+;   80		HeroLeft2 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -140,8 +148,21 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-116),HL
-;   77		HeroRight0 = gfx_MallocSprite(20, 40);
+	LEA	IY,IX+-128
+;   81		HeroRight0 = gfx_MallocSprite(20, 40);
+	LD	BC,_malloc
+	PUSH	BC
+	LD	BC,40
+	PUSH	BC
+	LD	BC,20
+	PUSH	BC
+	LD	(IY+-39),HL
+	CALL	_gfx_AllocSprite
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	(IX+-114),HL
+;   82		HeroRight1 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -152,8 +173,32 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-83),HL
-;   78		HeroRight1 = gfx_MallocSprite(20, 40);
+	LD	(IX+-108),HL
+;   83		HeroRight2 = gfx_MallocSprite(20, 40);
+	LD	BC,_malloc
+	PUSH	BC
+	LD	BC,40
+	PUSH	BC
+	LD	BC,20
+	PUSH	BC
+	CALL	_gfx_AllocSprite
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	(IX+-111),HL
+;   84		HeroJumpRight0 = gfx_MallocSprite(20, 40);
+	LD	BC,_malloc
+	PUSH	BC
+	LD	BC,40
+	PUSH	BC
+	LD	BC,20
+	PUSH	BC
+	CALL	_gfx_AllocSprite
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	(IX+-81),HL
+;   85		HeroJumpRight1 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -165,7 +210,7 @@ _main:
 	POP	BC
 	POP	BC
 	LD	(IX+-87),HL
-;   79		HeroRight2 = gfx_MallocSprite(20, 40);
+;   86		HeroJumpRight2 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -176,8 +221,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-91),HL
-;   80		HeroJumpRight0 = gfx_MallocSprite(20, 40);
+	LD	(IX+-90),HL
+;   87		HeroJumpUpRight = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -188,8 +233,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-61),HL
-;   81		HeroJumpRight1 = gfx_MallocSprite(20, 40);
+	LD	(IX+-95),HL
+;   88		HeroJumpUpLeft = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -200,8 +245,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-64),HL
-;   82		HeroJumpRight2 = gfx_MallocSprite(20, 40);
+	LD	(IX+-102),HL
+;   89		HeroJumpLeft0 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -212,8 +257,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-67),HL
-;   83		HeroJumpUpRight = gfx_MallocSprite(20, 40);
+	LD	(IX+-128),HL
+;   90		HeroJumpLeft1 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
@@ -224,56 +269,34 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-70),HL
-;   84		HeroJumpUpLeft = gfx_MallocSprite(20, 40);
+	LEA	IY,IX+-128
+;   91		HeroJumpLeft2 = gfx_MallocSprite(20, 40);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,40
 	PUSH	BC
 	LD	BC,20
 	PUSH	BC
+	LD	(IY+-3),HL
 	CALL	_gfx_AllocSprite
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-74),HL
-;   85		HeroJumpLeft0 = gfx_MallocSprite(20, 40);
+	LEA	IY,IX+-128
+;   92		behindArrow = gfx_MallocSprite(20, 4);
 	LD	BC,_malloc
 	PUSH	BC
-	LD	BC,40
+	LD	BC,4
 	PUSH	BC
 	LD	BC,20
 	PUSH	BC
+	LD	(IY+-36),HL
 	CALL	_gfx_AllocSprite
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-104),HL
-;   86		HeroJumpLeft1 = gfx_MallocSprite(20, 40);
-	LD	BC,_malloc
-	PUSH	BC
-	LD	BC,40
-	PUSH	BC
-	LD	BC,20
-	PUSH	BC
-	CALL	_gfx_AllocSprite
-	POP	BC
-	POP	BC
-	POP	BC
-	LD	(IX+-107),HL
-;   87		HeroJumpLeft2 = gfx_MallocSprite(20, 40);
-	LD	BC,_malloc
-	PUSH	BC
-	LD	BC,40
-	PUSH	BC
-	LD	BC,20
-	PUSH	BC
-	CALL	_gfx_AllocSprite
-	POP	BC
-	POP	BC
-	POP	BC
-	LD	(IX+-110),HL
-;   88		behindArrow = gfx_MallocSprite(20, 4);
+	LD	(IX+-44),HL
+;   93		arrowSpr = gfx_MallocSprite(20, 4);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,4
@@ -284,8 +307,8 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-56),HL
-;   89		arrowSpr = gfx_MallocSprite(20, 4);
+	LD	(IX+-72),HL
+;   94		arrowSprLeft = gfx_MallocSprite(20, 4);
 	LD	BC,_malloc
 	PUSH	BC
 	LD	BC,4
@@ -296,218 +319,270 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-113),HL
-;   90	
-;   91	
-;   92		zx7_Decompress( HeroStill, HeroStill_compressed );
+	LD	(IX+-84),HL
+;   95		arrowSprTiltLeft = gfx_MallocSprite(20, 4);
+	LD	BC,_malloc
+	PUSH	BC
+	LD	BC,4
+	PUSH	BC
+	LD	BC,20
+	PUSH	BC
+	CALL	_gfx_AllocSprite
+	POP	BC
+	POP	BC
+	POP	BC
+	LEA	IY,IX+-128
+;   96		arrowSprTiltRight = gfx_MallocSprite(20, 4);
+	LD	BC,_malloc
+	PUSH	BC
+	LD	BC,4
+	PUSH	BC
+	LD	BC,20
+	PUSH	BC
+	LD	(IY+-42),HL
+	CALL	_gfx_AllocSprite
+	POP	BC
+	POP	BC
+	POP	BC
+	LEA	IY,IX+-128
+;   97	
+;   98	
+;   99		zx7_Decompress( HeroStill, HeroStill_compressed );
 	LD	BC,_HeroStill_compressed
 	PUSH	BC
-	LD	BC,(IX+-77)
+	LD	(IY+-45),HL
+	LD	BC,(IX+-51)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   93		zx7_Decompress( HeroRight0, HeroRight0_compressed );
+;  100		zx7_Decompress( HeroRight0, HeroRight0_compressed );
 	LD	BC,_HeroRight0_compressed
 	PUSH	BC
-	LD	BC,(IX+-83)
+	LD	BC,(IX+-114)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   94		zx7_Decompress( HeroRight1, HeroRight1_compressed );
+;  101		zx7_Decompress( HeroRight1, HeroRight1_compressed );
 	LD	BC,_HeroRight1_compressed
 	PUSH	BC
-	LD	BC,(IX+-87)
+	LD	BC,(IX+-108)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   95		zx7_Decompress( HeroRight2, HeroRight2_compressed );
+;  102		zx7_Decompress( HeroRight2, HeroRight2_compressed );
 	LD	BC,_HeroRight2_compressed
 	PUSH	BC
-	LD	BC,(IX+-91)
+	LD	BC,(IX+-111)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   96		zx7_Decompress( HeroJumpRight0, HeroJumpRight0_compressed );
+;  103		zx7_Decompress( HeroJumpRight0, HeroJumpRight0_compressed );
 	LD	BC,_HeroJumpRight0_compressed
 	PUSH	BC
-	LD	BC,(IX+-61)
+	LD	BC,(IX+-81)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   97		zx7_Decompress( HeroJumpRight1, HeroJumpRight1_compressed );
+;  104		zx7_Decompress( HeroJumpRight1, HeroJumpRight1_compressed );
 	LD	BC,_HeroJumpRight1_compressed
 	PUSH	BC
-	LD	BC,(IX+-64)
+	LD	BC,(IX+-87)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   98		zx7_Decompress( HeroJumpRight2, HeroJumpRight2_compressed );
+;  105		zx7_Decompress( HeroJumpRight2, HeroJumpRight2_compressed );
 	LD	BC,_HeroJumpRight2_compressed
 	PUSH	BC
-	LD	BC,(IX+-67)
+	LD	BC,(IX+-90)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;   99		zx7_Decompress( HeroJumpUpRight, HeroJumpUpRight_compressed );
+;  106		zx7_Decompress( HeroJumpUpRight, HeroJumpUpRight_compressed );
 	LD	BC,_HeroJumpUpRight_compressed
 	PUSH	BC
-	LD	BC,(IX+-70)
+	LD	BC,(IX+-95)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  100		zx7_Decompress( arrowSpr, arrow_compressed );
+;  107		zx7_Decompress( arrowSpr, arrow_compressed );
 	LD	BC,_arrow_compressed
 	PUSH	BC
-	LD	BC,(IX+-113)
+	LD	BC,(IX+-72)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  101	
-;  102		gfx_FlipSpriteY(HeroRight0, HeroLeft0);
-	LD	BC,(IX+-98)
+;  108	
+;  109		gfx_FlipSpriteY(HeroRight0, HeroLeft0);
+	LD	BC,(IX+-118)
 	PUSH	BC
-	LD	BC,(IX+-83)
+	LD	BC,(IX+-114)
 	PUSH	BC
 	CALL	_gfx_FlipSpriteY
 	POP	BC
 	POP	BC
-;  103		gfx_FlipSpriteY(HeroRight1, HeroLeft1);
-	LD	BC,(IX+-101)
+;  110		gfx_FlipSpriteY(HeroRight1, HeroLeft1);
+	LD	BC,(IX+-121)
+	PUSH	BC
+	LD	BC,(IX+-108)
+	PUSH	BC
+	CALL	_gfx_FlipSpriteY
+	POP	BC
+	POP	BC
+;  111		gfx_FlipSpriteY(HeroRight2, HeroLeft2);
+	LEA	IY,IX+-128
+	LD	BC,(IY+-39)
+	PUSH	BC
+	LD	BC,(IX+-111)
+	PUSH	BC
+	CALL	_gfx_FlipSpriteY
+	POP	BC
+	POP	BC
+;  112		gfx_FlipSpriteY(HeroJumpRight0, HeroJumpLeft0);
+	LD	BC,(IX+-128)
+	PUSH	BC
+	LD	BC,(IX+-81)
+	PUSH	BC
+	CALL	_gfx_FlipSpriteY
+	POP	BC
+	POP	BC
+;  113		gfx_FlipSpriteY(HeroJumpRight1, HeroJumpLeft1);
+	LEA	IY,IX+-128
+	LD	BC,(IY+-3)
 	PUSH	BC
 	LD	BC,(IX+-87)
 	PUSH	BC
 	CALL	_gfx_FlipSpriteY
 	POP	BC
 	POP	BC
-;  104		gfx_FlipSpriteY(HeroRight2, HeroLeft2);
-	LD	BC,(IX+-116)
+;  114		gfx_FlipSpriteY(HeroJumpRight2, HeroJumpLeft2);
+	LEA	IY,IX+-128
+	LD	BC,(IY+-36)
 	PUSH	BC
-	LD	BC,(IX+-91)
-	PUSH	BC
-	CALL	_gfx_FlipSpriteY
-	POP	BC
-	POP	BC
-;  105		gfx_FlipSpriteY(HeroJumpRight0, HeroJumpLeft0);
-	LD	BC,(IX+-104)
-	PUSH	BC
-	LD	BC,(IX+-61)
+	LD	BC,(IX+-90)
 	PUSH	BC
 	CALL	_gfx_FlipSpriteY
 	POP	BC
 	POP	BC
-;  106		gfx_FlipSpriteY(HeroJumpRight1, HeroJumpLeft1);
-	LD	BC,(IX+-107)
+;  115		gfx_FlipSpriteY(HeroJumpUpRight, HeroJumpUpLeft);
+	LD	BC,(IX+-102)
 	PUSH	BC
-	LD	BC,(IX+-64)
-	PUSH	BC
-	CALL	_gfx_FlipSpriteY
-	POP	BC
-	POP	BC
-;  107		gfx_FlipSpriteY(HeroJumpRight2, HeroJumpLeft2);
-	LD	BC,(IX+-110)
-	PUSH	BC
-	LD	BC,(IX+-67)
+	LD	BC,(IX+-95)
 	PUSH	BC
 	CALL	_gfx_FlipSpriteY
 	POP	BC
 	POP	BC
-;  108		gfx_FlipSpriteY(HeroJumpUpRight, HeroJumpUpLeft);
-	LD	BC,(IX+-74)
+;  116		gfx_FlipSpriteY(arrowSpr, arrowSprLeft);
+	LD	BC,(IX+-84)
 	PUSH	BC
-	LD	BC,(IX+-70)
+	LD	BC,(IX+-72)
 	PUSH	BC
 	CALL	_gfx_FlipSpriteY
 	POP	BC
 	POP	BC
-;  109	
-;  110		velocity = 2;
-	LD	BC,2
-	LD	(IX+-42),BC
-;  111	
-;  112		jumpingDir = nothing;
-	LD	BC,8
-	LD	(IX+-27),BC
-;  113	
-;  114		ascending = doubleJumped = inLadder = isBoosted = keyIsReleased = false;
-	LD	(IX+-35),0
-	LD	(IX+-24),0
-	LD	(IX+-19),0
-	LD	(IX+-39),0
-	LD	(IX+-23),0
-;  115	
-;  116		facingRight = true;
-	LD	(IX+-38),1
 ;  117	
-;  118		heroRunRight[0] = HeroRight0;
-	LD	BC,(IX+-83)
-	LEA	IY,IX+-128
-	LD	(IY+-34),BC
-;  119		heroRunRight[1] = HeroRight1;
-	LD	IY,IX
-	LD	BC,-162
-	ADD	IY,BC
-	LEA	HL,IY+3
-;  120		heroRunRight[2] = HeroRight2;
-	LD	IY,IX
-	LD	BC,(IX+-87)
-	LD	DE,-162
-	ADD	IY,DE
-	LD	(HL),BC
-	LD	BC,(IX+-91)
-	LEA	HL,IY+6
-	LD	(HL),BC
+;  118		velocity = 2;
+	LD	BC,2
+	LD	(IX+-41),BC
+;  119	
+;  120		jumpingDir = nothing;
+	LD	BC,8
+	LD	(IX+-30),BC
 ;  121	
-;  122		heroRunLeft[0] = HeroLeft0;
-	LD	BC,(IX+-98)
+;  122		ascending = doubleJumped = inLadder = isBoosted = keyIsReleased = false;
+	LD	(IX+-38),0
+	LD	(IX+-27),0
+	LD	(IX+-19),0
+	LD	(IX+-45),0
+	LD	(IX+-26),0
+;  123	
+;  124		facingRight = alphaReleased = standing = true;
+	LD	(IX+-37),1
+	LD	(IX+-32),1
+	LD	(IX+-36),1
+;  125	
+;  126		heroRunRight[0] = HeroRight0;
+	LD	BC,(IX+-114)
 	LEA	IY,IX+-128
-	LD	(IY+-25),BC
-;  123		heroRunLeft[1] = HeroLeft1;
+	LD	(IY+-63),BC
+;  127		heroRunRight[1] = HeroRight1;
 	LD	IY,IX
-	LD	BC,-153
+	LD	BC,-191
 	ADD	IY,BC
 	LEA	HL,IY+3
-;  124		heroRunLeft[2] = HeroLeft2;
+;  128		heroRunRight[2] = HeroRight2;
 	LD	IY,IX
-	LD	BC,(IX+-101)
-	LD	DE,-153
+	LD	BC,(IX+-108)
+	LD	DE,-191
 	ADD	IY,DE
 	LD	(HL),BC
-	LD	BC,(IX+-116)
+	LD	BC,(IX+-111)
 	LEA	HL,IY+6
 	LD	(HL),BC
-;  125	
-;  126		heroJumpRight[0] = HeroJumpRight0;
-	LD	BC,(IX+-61)
+;  129	
+;  130		heroRunLeft[0] = HeroLeft0;
+	LD	BC,(IX+-118)
 	LEA	IY,IX+-128
-	LD	(IY+-43),BC
-;  127		heroJumpRight[1] = HeroJumpRight1;
+	LD	(IY+-54),BC
+;  131		heroRunLeft[1] = HeroLeft1;
 	LD	IY,IX
-	LD	BC,-171
+	LD	BC,-182
 	ADD	IY,BC
 	LEA	HL,IY+3
-	LD	BC,(IX+-64)
-	LD	(HL),BC
-;  128		heroJumpRight[2] = HeroJumpRight2;
+;  132		heroRunLeft[2] = HeroLeft2;
 	LD	IY,IX
-	LD	BC,(IX+-67)
-;  129	
-;  130		behind_sprite = gfx_MallocSprite(20, 40);
+	ADD	IY,BC
+	PUSH	BC
+	PUSH	HL
+	LEA	HL,IY+6
+	LD	BC,-218	; spill
+	CALL	__istix
+	POP	HL
+	POP	BC
+	LD	BC,(IX+-121)
+	LD	(HL),BC
+	LEA	IY,IX+-128
+	LD	BC,(IY+-39)
+	PUSH	BC
+	LD	BC,-218	; unspill
+	PUSH	HL
+	CALL	__ildix
+	LD	IY,HL
+	POP	HL
+	POP	BC
+	LD	(IY),BC
+;  133	
+;  134		heroJumpRight[0] = HeroJumpRight0;
+	LD	BC,(IX+-81)
+	LEA	IY,IX+-128
+	LD	(IY+-72),BC
+;  135		heroJumpRight[1] = HeroJumpRight1;
+	LD	IY,IX
+	LD	BC,-200
+	ADD	IY,BC
+	LEA	HL,IY+3
+	LD	BC,(IX+-87)
+	LD	(HL),BC
+;  136		heroJumpRight[2] = HeroJumpRight2;
+	LD	IY,IX
+	LD	BC,(IX+-90)
+;  137	
+;  138		behind_sprite = gfx_MallocSprite(20, 40);
 	LD	DE,_malloc
 	PUSH	DE
 	LD	DE,40
 	PUSH	DE
 	LD	DE,20
 	PUSH	DE
-	LD	DE,-171
+	LD	DE,-200
 	ADD	IY,DE
 	LEA	HL,IY+6
 	LD	(HL),BC
@@ -516,37 +591,39 @@ _main:
 	POP	BC
 	POP	BC
 	LD	(IX+-18),HL
-;  131	
-;  132		lastStill.x = hero.x;
+;  139	
+;  140		lastStill.x = hero.x;
 	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  133		lastStill.y = hero.y;
-	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  134	
-;  135		arrow.x = 0;
-	LD	BC,0
 	LD	(IX+-12),BC
-;  136		arrow.y = 0;
+;  141		lastStill.y = hero.y;
+	LD	BC,(_hero+3)
 	LD	(IX+-9),BC
-;  137	
-;  138		shootingDir = nothing;
+;  142	
+;  143		arrow.x = 0;
+	LD	BC,0
+	LD	(IX+-6),BC
+;  144		arrow.y = 0;
+	LD	(IX+-3),BC
+;  145	
+;  146		arrowDistance = 80;
+;  147	
+;  148		shootingDir = nothing;
 	LD	BC,8
 	LD	(IX+-22),BC
-;  139	
-;  140		srand(rtc_Time());
+;  149	
+;  150		srand(rtc_Time());
 	LD	BC,(15925316)
 	PUSH	BC
 	CALL	_srand
 	POP	BC
-;  141	
-;  142		gfx_Begin();
+;  151	
+;  152		gfx_Begin();
 	CALL	_gfx_Begin
-;  143	
-;  144		gfx_SetPalette(global_palette, sizeof_global_palette, 0);
+;  153	
+;  154		gfx_SetPalette(global_palette, sizeof_global_palette, 0);
 	LD	BC,0
 	PUSH	BC
-	LD	BC,116
+	LD	BC,128
 	PUSH	BC
 	LD	BC,_global_palette
 	PUSH	BC
@@ -554,23 +631,23 @@ _main:
 	POP	BC
 	POP	BC
 	POP	BC
-;  145	
-;  146		mapNum = 1;
+;  155	
+;  156		mapNum = 1;
 	LD	BC,1
 	LD	(IX+-15),BC
-;  147	
-;  148		gfx_FillScreen(1);
+;  157	
+;  158		gfx_FillScreen(1);
 	PUSH	BC
 	CALL	_gfx_FillScreen
 	POP	BC
-;  149	
-;  150		while(!(kb_Data[6] & kb_Enter)){
+;  159	
+;  160		while(!(kb_Data[6] & kb_Enter)){
 	JR	L_17
 L_18:
-;  151			kb_Scan();
+;  161			kb_Scan();
 	CALL	_kb_Scan
-;  152	
-;  153	   		key = kb_Data[7] == kb_Down;
+;  162	
+;  163	   		key = kb_Data[7] == kb_Down;
 	LD	A,(16056350)
 	CP	A,1
 	JR	NZ,L__1
@@ -579,16 +656,16 @@ L_18:
 L__1:
 	XOR	A,A
 L__2:
-	LD	(IX+-58),A
-;  154	
-;  155			if(key && !prevkey) {
+	LD	(IX+-92),A
+;  164	
+;  165			if(key && !prevkey) {
 	OR	A,A
 	JR	Z,L_5
-	LD	A,(IX+-88)
+	LD	A,(IX+-98)
 	OR	A,A
 	JR	NZ,L_5
-;  156				if(mapNum == 7) mapNum = 0;
-	LD	BC,7
+;  166				if(mapNum == 5) mapNum = 0;
+	LD	BC,5
 	LD	HL,(IX+-15)
 	OR	A,A
 	SBC	HL,BC
@@ -596,17 +673,17 @@ L__2:
 	LD	BC,0
 	LD	(IX+-15),BC
 L_3:
-;  157				mapNum++;
+;  167				mapNum++;
 	LD	BC,(IX+-15)
 	INC	BC
 	LD	(IX+-15),BC
-;  158				gfx_SetColor(1);
+;  168				gfx_SetColor(1);
 	LD	BC,1
 	PUSH	BC
 	CALL	_gfx_SetColor
 	POP	BC
-;  159	
-;  160				gfx_FillRectangle(0, 0, 4, 4);
+;  169	
+;  170				gfx_FillRectangle(0, 0, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
@@ -618,7 +695,7 @@ L_3:
 	POP	BC
 	POP	BC
 	POP	BC
-;  161				gfx_FillRectangle(0, 20, 4, 4);
+;  171				gfx_FillRectangle(0, 20, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
@@ -631,7 +708,7 @@ L_3:
 	POP	BC
 	POP	BC
 	POP	BC
-;  162				gfx_FillRectangle(0, 40, 4, 4);
+;  172				gfx_FillRectangle(0, 40, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
@@ -644,7 +721,7 @@ L_3:
 	POP	BC
 	POP	BC
 	POP	BC
-;  163				gfx_FillRectangle(0, 60, 4, 4);
+;  173				gfx_FillRectangle(0, 60, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
@@ -657,7 +734,7 @@ L_3:
 	POP	BC
 	POP	BC
 	POP	BC
-;  164				gfx_FillRectangle(0, 80, 4, 4);
+;  174				gfx_FillRectangle(0, 80, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
@@ -670,17 +747,17 @@ L_3:
 	POP	BC
 	POP	BC
 	POP	BC
-;  165	
-;  166	
-;  167				gfx_SetColor(0);
+;  175	
+;  176	
+;  177				gfx_SetColor(0);
 	LD	BC,0
 	PUSH	BC
 	CALL	_gfx_SetColor
 	POP	BC
-;  168			}
+;  178			}
 L_5:
-;  169	
-;  170			gfx_PrintStringXY("Map1", 20, 0);
+;  179	
+;  180			gfx_PrintStringXY("Map1", 20, 0);
 	LD	BC,0
 	PUSH	BC
 	LD	BC,20
@@ -691,7 +768,7 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  171			gfx_PrintStringXY("Map2", 20, 20);
+;  181			gfx_PrintStringXY("Map2", 20, 20);
 	LD	BC,20
 	PUSH	BC
 	PUSH	BC
@@ -701,7 +778,7 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  172			gfx_PrintStringXY("Map3", 20, 40);
+;  182			gfx_PrintStringXY("Map3", 20, 40);
 	LD	BC,40
 	PUSH	BC
 	LD	BC,20
@@ -712,7 +789,7 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  173			gfx_PrintStringXY("Map4", 20, 60);
+;  183			gfx_PrintStringXY("Map4", 20, 60);
 	LD	BC,60
 	PUSH	BC
 	LD	BC,20
@@ -723,7 +800,7 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  174			gfx_PrintStringXY("Map5", 20, 80);
+;  184			gfx_PrintStringXY("Map5", 20, 80);
 	LD	BC,80
 	PUSH	BC
 	LD	BC,20
@@ -734,8 +811,8 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  175	
-;  176			if(mapNum == 1)	gfx_FillRectangle(0, 0, 4, 4);
+;  185	
+;  186			if(mapNum == 1)	gfx_FillRectangle(0, 0, 4, 4);
 	LD	HL,(IX+-15)
 	LD	BC,1
 	OR	A,A
@@ -752,7 +829,7 @@ L_5:
 	POP	BC
 	POP	BC
 	POP	BC
-;  177			else if(mapNum == 2) gfx_FillRectangle(0, 20, 4, 4);			
+;  187			else if(mapNum == 2) gfx_FillRectangle(0, 20, 4, 4);			
 	JR	L_15
 L_14:
 	LD	BC,2
@@ -772,7 +849,7 @@ L_14:
 	POP	BC
 	POP	BC
 	POP	BC
-;  178			else if(mapNum == 3) gfx_FillRectangle(0, 40, 4, 4);
+;  188			else if(mapNum == 3) gfx_FillRectangle(0, 40, 4, 4);
 	JR	L_15
 L_12:
 	LD	BC,3
@@ -792,7 +869,7 @@ L_12:
 	POP	BC
 	POP	BC
 	POP	BC
-;  179			else if(mapNum == 4) gfx_FillRectangle(0, 60, 4, 4);
+;  189			else if(mapNum == 4) gfx_FillRectangle(0, 60, 4, 4);
 	JR	L_15
 L_10:
 	LD	BC,4
@@ -811,7 +888,7 @@ L_10:
 	POP	BC
 	POP	BC
 	POP	BC
-;  180			else if(mapNum == 5) gfx_FillRectangle(0, 80, 4, 4);
+;  190			else if(mapNum == 5) gfx_FillRectangle(0, 80, 4, 4);
 	JR	L_15
 L_8:
 	LD	BC,5
@@ -832,75 +909,29 @@ L_8:
 	POP	BC
 	POP	BC
 L_15:
-;  181	
-;  182			prevkey = key;
-	LD	A,(IX+-58)
-	LD	(IX+-88),A
-;  183	
-;  184			dbg_ClearConsole();
-;  185			dbg_sprintf(dbgout, "%d", mapNum);
-;  186		}
+;  191	
+;  192			prevkey = key;
+	LD	A,(IX+-92)
+	LD	(IX+-98),A
+;  193	
+;  194			dbg_ClearConsole();
+;  195			dbg_sprintf(dbgout, "%d", mapNum);
+;  196		}
 L_17:
 	LD	A,(16056348)
 	AND	A,1
 	JR	Z,L_18
-;  187	
-;  188		if(mapNum == 1)	{
+;  197	
+;  198		if(mapNum == 1)	{
 	LD	BC,1
 	LD	HL,(IX+-15)
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_27
-;  189			zx7_Decompress( map, map1_compressed );
+;  199			zx7_Decompress( map, map1_compressed );
 	LD	BC,_map1_compressed
 	PUSH	BC
-	LD	BC,(IX+-47)
-	PUSH	BC
-	CALL	_zx7_Decompress
-	POP	BC
-	POP	BC
-;  190			hero.x = 0;
-	LD	BC,0
-	LD	(_hero),BC
-;  191			hero.y = 150;
-	LD	BC,150
-	LD	(_hero+3),BC
-;  192		}
-;  193		else if(mapNum == 2) {
-	JR	L_29
-L_27:
-	LD	BC,2
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_25
-;  194			zx7_Decompress( map, map2_compressed );		
-	LD	BC,_map2_compressed
-	PUSH	BC
-	LD	BC,(IX+-47)
-	PUSH	BC
-	CALL	_zx7_Decompress
-	POP	BC
-	POP	BC
-;  195			hero.x = 0;
-	LD	BC,0
-	LD	(_hero),BC
-;  196			hero.y = 180;
-	LD	BC,180
-	LD	(_hero+3),BC
-;  197		}
-;  198		else if(mapNum == 3) {
-	JR	L_29
-L_25:
-	LD	BC,3
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_23
-;  199			zx7_Decompress( map, map3_compressed );
-	LD	BC,_map3_compressed
-	PUSH	BC
-	LD	BC,(IX+-47)
+	LD	BC,(IX+-35)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
@@ -908,11 +939,57 @@ L_25:
 ;  200			hero.x = 0;
 	LD	BC,0
 	LD	(_hero),BC
-;  201			hero.y = 180;
-	LD	BC,180
+;  201			hero.y = 150;
+	LD	BC,150
 	LD	(_hero+3),BC
 ;  202		}
-;  203		else if(mapNum == 4) {
+;  203		else if(mapNum == 2) {
+	JR	L_29
+L_27:
+	LD	BC,2
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_25
+;  204			zx7_Decompress( map, map2_compressed );		
+	LD	BC,_map2_compressed
+	PUSH	BC
+	LD	BC,(IX+-35)
+	PUSH	BC
+	CALL	_zx7_Decompress
+	POP	BC
+	POP	BC
+;  205			hero.x = 0;
+	LD	BC,0
+	LD	(_hero),BC
+;  206			hero.y = 180;
+	LD	BC,180
+	LD	(_hero+3),BC
+;  207		}
+;  208		else if(mapNum == 3) {
+	JR	L_29
+L_25:
+	LD	BC,3
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_23
+;  209			zx7_Decompress( map, map3_compressed );
+	LD	BC,_map3_compressed
+	PUSH	BC
+	LD	BC,(IX+-35)
+	PUSH	BC
+	CALL	_zx7_Decompress
+	POP	BC
+	POP	BC
+;  210			hero.x = 0;
+	LD	BC,0
+	LD	(_hero),BC
+;  211			hero.y = 180;
+	LD	BC,180
+	LD	(_hero+3),BC
+;  212		}
+;  213		else if(mapNum == 4) {
 	JR	L_29
 L_23:
 	LD	BC,4
@@ -920,22 +997,22 @@ L_23:
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_21
-;  204			zx7_Decompress( map, map4_compressed );
+;  214			zx7_Decompress( map, map4_compressed );
 	LD	BC,_map4_compressed
 	PUSH	BC
-	LD	BC,(IX+-47)
+	LD	BC,(IX+-35)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  205			hero.x = 50;
+;  215			hero.x = 50;
 	LD	BC,50
 	LD	(_hero),BC
-;  206			hero.y = 100;
+;  216			hero.y = 100;
 	LD	BC,100
 	LD	(_hero+3),BC
-;  207		}		
-;  208		else if(mapNum == 5) {
+;  217		}		
+;  218		else if(mapNum == 5) {
 	JR	L_29
 L_21:
 	LD	BC,5
@@ -943,31 +1020,31 @@ L_21:
 	OR	A,A
 	SBC	HL,BC
 	JR	NZ,L_29
-;  209			zx7_Decompress( map, map5_compressed );
+;  219			zx7_Decompress( map, map5_compressed );
 	LD	BC,_map5_compressed
 	PUSH	BC
-	LD	BC,(IX+-47)
+	LD	BC,(IX+-35)
 	PUSH	BC
 	CALL	_zx7_Decompress
 	POP	BC
 	POP	BC
-;  210			hero.x = 80;
+;  220			hero.x = 80;
 	LD	BC,80
 	LD	(_hero),BC
-;  211			hero.y = 180;
+;  221			hero.y = 180;
 	LD	BC,180
 	LD	(_hero+3),BC
-;  212		}
+;  222		}
 L_29:
-;  213	
-;  214		gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+;  223	
+;  224		gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
-	LD	BC,(IX+-47)
+	LD	BC,(IX+-35)
 	PUSH	BC
 	CALL	_gfx_ScaledSprite_NoClip
 	POP	BC
@@ -975,27 +1052,27 @@ L_29:
 	POP	BC
 	POP	BC
 	POP	BC
-;  215	
-;  216		gfx_SetDrawBuffer();
+;  225	
+;  226		gfx_SetDrawBuffer();
 	LD	BC,1
 	PUSH	BC
 	CALL	_gfx_SetDraw
 	POP	BC
-;  217		
-;  218		gfx_SetTransparentColor(1);
+;  227		
+;  228		gfx_SetTransparentColor(1);
 	LD	BC,1
 	PUSH	BC
 	CALL	_gfx_SetTransparentColor
 	POP	BC
-;  219	
-;  220		gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+;  229	
+;  230		gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
 	LD	BC,4
 	PUSH	BC
 	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
-	LD	BC,(IX+-47)
+	LD	BC,(IX+-35)
 	PUSH	BC
 	CALL	_gfx_ScaledSprite_NoClip
 	POP	BC
@@ -1003,14 +1080,81 @@ L_29:
 	POP	BC
 	POP	BC
 	POP	BC
-;  221	
-;  222		gfx_BlitBuffer();
-	LD	BC,1
+;  231	
+;  232		gfx_SwapDraw();
+	CALL	_gfx_SwapDraw
+;  233	
+;  234		establishBoundaries(mapNum);
+	LD	BC,(IX+-15)
 	PUSH	BC
-	CALL	_gfx_Blit
+	CALL	_establishBoundaries
 	POP	BC
-;  223	
-;  224		gfx_GetSprite(behind_sprite, hero.x, hero.y);
+;  235		gfx_SetColor(0);
+	LD	BC,0
+	PUSH	BC
+	CALL	_gfx_SetColor
+	POP	BC
+;  236		for(x = 0; x < 80; x++){
+	LD	BC,0
+	LD	(IX+-63),BC
+	JR	L_38
+L_36:
+;  237			for(y = 0; y < 60; y++){
+	LD	BC,0
+	LD	(IX+-59),BC
+	JR	L_35
+L_33:
+;  238				if(boundaries[y][x]) gfx_FillRectangle(x * 4, y * 4, 4, 4);
+	LD	HL,(IX+-59)
+	LD	A,80
+	CALL	__imul_b
+	LD	BC,_boundaries
+	ADD	HL,BC
+	LD	BC,(IX+-63)
+	ADD	HL,BC
+	LD	A,(HL)
+	OR	A,A
+	JR	Z,L_34
+	LD	BC,4
+	PUSH	BC
+	PUSH	BC
+	LD	HL,(IX+-59)
+	ADD	HL,HL
+	ADD	HL,HL
+	PUSH	HL
+	LD	HL,(IX+-63)
+	ADD	HL,HL
+	ADD	HL,HL
+	PUSH	HL
+	CALL	_gfx_FillRectangle
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+;  239			}
+L_34:
+	LD	BC,(IX+-59)
+	INC	BC
+	LD	(IX+-59),BC
+L_35:
+	LD	BC,60
+	LD	HL,(IX+-59)
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_33
+	LD	BC,(IX+-63)
+	INC	BC
+	LD	(IX+-63),BC
+;  240		}
+L_38:
+	LD	BC,80
+	LD	HL,(IX+-63)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_36
+;  241	
+;  242		gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	LD	BC,(_hero+3)
 	PUSH	BC
 	LD	BC,(_hero)
@@ -1021,333 +1165,454 @@ L_29:
 	POP	BC
 	POP	BC
 	POP	BC
-;  225		gfx_GetSprite(behindArrow, arrow.x, arrow.y);
-	LD	BC,(IX+-9)
+;  243		gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
 	PUSH	BC
-	LD	BC,(IX+-12)
+	LD	BC,(IX+-6)
 	PUSH	BC
-	LD	BC,(IX+-56)
+	LD	BC,(IX+-44)
 	PUSH	BC
 	CALL	_gfx_GetSprite
 	POP	BC
 	POP	BC
 	POP	BC
-;  226		gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+;  244		gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-77)
+	LD	BC,(IX+-51)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  227	
-;  228		while(!(kb_Data[6] & kb_Clear)){
-	JR	L_338
-L_339:
-;  229	
-;  230			kb_Scan();
+;  245	
+;  246		while(!(kb_Data[6] & kb_Clear)){
+	JR	L_408
+L_409:
+;  247	
+;  248			kb_Scan();
 	CALL	_kb_Scan
-;  231	
-;  232			alphaKey = kb_Data[2] & kb_Alpha;
+;  249	
+;  250			alphaKey = kb_Data[2] & kb_Alpha;
 	LD	A,(16056340)
 	AND	A,128
-	LD	(IX+-43),A
-;  233			secondKey = kb_Data[1] & kb_2nd;
+	LD	(IX+-46),A
+;  251			secondKey = kb_Data[1] & kb_2nd;
 	LD	A,(16056338)
 	AND	A,32
-	LD	(IX+-50),A
-;  234			modeKey = kb_Data[1] & kb_Mode;
+	LD	(IX+-53),A
+;  252			modeKey = kb_Data[1] & kb_Mode;
 	LD	A,(16056338)
 	AND	A,64
-	LD	(IX+-49),A
-;  235			upKey = kb_Data[7] & kb_Up;
+	LD	(IX+-52),A
+;  253			upKey = kb_Data[7] & kb_Up;
 	LD	A,(16056350)
 	AND	A,8
-	LD	(IX+-44),A
-;  236			downKey = kb_Data[7] & kb_Down;
+	LD	(IX+-91),A
+;  254			downKey = kb_Data[7] & kb_Down;
 	LD	A,(16056350)
 	AND	A,1
-	LD	(IX+-52),A
-;  237			leftKey = kb_Data[7] & kb_Left;
+	LD	(IX+-99),A
+;  255			leftKey = kb_Data[7] & kb_Left;
 	LD	A,(16056350)
 	AND	A,2
-	LD	(IX+-36),A
-;  238			rightKey = kb_Data[7] & kb_Right;
+	LD	(IX+-47),A
+;  256			rightKey = kb_Data[7] & kb_Right;
 	LD	A,(16056350)
 	AND	A,4
-	LD	(IX+-37),A
-;  239	
-;  240			if(shootingDir == nothing && (alphaKey || kb_Data[3] & kb_0) && (rightKey || leftKey || upKey || downKey)){
+	LD	(IX+-48),A
+;  257	
+;  258			if(shootingDir == nothing && (alphaKey || kb_Data[3] & kb_0) && (rightKey || leftKey) && alphaReleased){
 	LD	HL,(IX+-22)
 	OR	A,A
 	LD	BC,8
 	SBC	HL,BC
-	JR	NZ,L_64
-	LD	A,(IX+-43)
+	JR	NZ,L_113
+	LD	A,(IX+-46)
 	OR	A,A
-	JR	NZ,L_35
+	JR	NZ,L_43
 	LD	A,(16056342)
 	AND	A,1
-	JR	Z,L_64
-L_35:
-	LD	A,(IX+-37)
+	JR	Z,L_113
+L_43:
+	LD	A,(IX+-48)
 	OR	A,A
-	JR	NZ,L_52
-	LD	A,(IX+-36)
+	JR	NZ,L_44
+	LD	A,(IX+-47)
 	OR	A,A
-	JR	NZ,L_52
-	LD	A,(IX+-44)
+	JR	Z,L_113
+L_44:
+	LD	A,(IX+-32)
 	OR	A,A
-	JR	NZ,L_52
-	LD	A,(IX+-52)
-	OR	A,A
-	JR	Z,L_64
-L_52:
-;  241				gfx_Sprite_NoClip(behindArrow, arrow.x, arrow.y);
-	LD	C,(IX+-9)
+	JR	Z,L_113
+;  259				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
 	LD	B,0
 	PUSH	BC
-	LD	BC,(IX+-12)
+	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-56)
+	LD	BC,(IX+-18)
 	PUSH	BC
 	CALL	_gfx_Sprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  242				if(rightKey) {
-	LD	A,(IX+-37)
-	OR	A,A
-	JR	Z,L_38
-;  243					shootingDir = right;
-	LD	BC,0
-	LD	(IX+-22),BC
-;  244					arrow.x = hero.x + 20;
-	LD	IY,(_hero)
-	LEA	BC,IY+20
-	LD	(IX+-12),BC
-;  245					arrow.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+8
-	LD	(IX+-9),BC
-;  246					arrowInit.x = hero.x + 15;
-	LD	IY,(_hero)
-	LEA	BC,IY+15
-	LD	(IX+-34),BC
-;  247					arrowInit.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	IY,IY+8
-	LD	(IX+-31),IY
-;  248				}
-L_38:
-;  249				if(leftKey) {
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	Z,L_41
-;  250					shootingDir = left;
-	LD	BC,1
-	LD	(IX+-22),BC
-;  251					arrow.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-12),BC
-;  252					arrow.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+8
-	LD	(IX+-9),BC
-;  253					arrowInit.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-34),BC
-;  254					arrowInit.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	IY,IY+8
-	LD	(IX+-31),IY
-;  255				}
-L_41:
-;  256				if(upKey && leftKey){
-	LD	A,(IX+-44)
-	OR	A,A
-	JR	Z,L_44
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	Z,L_44
-;  257					shootingDir = upLeft;
-	LD	BC,4
-	LD	(IX+-22),BC
-;  258					arrow.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-12),BC
-;  259					arrow.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+8
-	LD	(IX+-9),BC
-;  260					arrowInit.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-34),BC
-;  261					arrowInit.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	IY,IY+8
-	LD	(IX+-31),IY
-;  262				}
-L_44:
-;  263				if(upKey && rightKey) {
-	LD	A,(IX+-44)
-	OR	A,A
-	JR	Z,L_47
-	LD	A,(IX+-37)
-	OR	A,A
-	JR	Z,L_47
-;  264					shootingDir = upRight;
-	LD	BC,5
-	LD	(IX+-22),BC
-;  265					arrow.x = hero.x + 20;
-	LD	IY,(_hero)
-	LEA	BC,IY+20
-	LD	(IX+-12),BC
-;  266					arrow.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+8
-	LD	(IX+-9),BC
-;  267					arrowInit.x = hero.x + 20;
-	LD	IY,(_hero)
-	LEA	BC,IY+20
-	LD	(IX+-34),BC
-;  268					arrowInit.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	IY,IY+8
-	LD	(IX+-31),IY
-;  269				}
-L_47:
-;  270				if(downKey && leftKey) {
-	LD	A,(IX+-52)
-	OR	A,A
-	JR	Z,L_50
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	Z,L_50
-;  271					shootingDir = downLeft;
-	LD	BC,6
-	LD	(IX+-22),BC
-;  272					arrow.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-12),BC
-;  273					arrow.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+8
-	LD	(IX+-9),BC
-;  274					arrowInit.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-34),BC
-;  275					arrowInit.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	IY,IY+8
-	LD	(IX+-31),IY
-;  276				}
-L_50:
-;  277				if(downKey && rightKey) {
-	LD	A,(IX+-52)
-	OR	A,A
-	JR	Z,L_51
-	LD	A,(IX+-37)
-	OR	A,A
-	JR	Z,L_51
-;  278					shootingDir = downRight;
-	LD	BC,7
-	LD	(IX+-22),BC
-;  279					arrow.x = hero.x + 20;
-	LD	IY,(_hero)
-	LEA	BC,IY+20
-	LD	(IX+-12),BC
-;  280					arrow.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+8
-	LD	(IX+-9),BC
-;  281					arrowInit.x = hero.x + 20;
-	LD	IY,(_hero)
-	LEA	BC,IY+20
-	LD	(IX+-34),BC
-;  282					arrowInit.y = hero.y + 8;
-	LD	IY,(_hero+3)
-	LEA	IY,IY+8
-	LD	(IX+-31),IY
-;  283				}
-L_51:
-;  284				gfx_GetSprite(behindArrow, arrow.x, arrow.y);
-	LD	BC,(IX+-9)
+;  260				gfx_Sprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
 	PUSH	BC
-	LD	BC,(IX+-12)
+	LD	BC,(IX+-6)
 	PUSH	BC
-	LD	BC,(IX+-56)
+	LD	BC,(IX+-44)
+	PUSH	BC
+	CALL	_gfx_Sprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  261				gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
 	PUSH	BC
 	CALL	_gfx_GetSprite
 	POP	BC
 	POP	BC
 	POP	BC
-;  285			}
-L_64:
-;  286			if(shootingDir != nothing){
+;  262				
+;  263				alphaReleased = false;
+	LD	(IX+-32),0
+;  264				if(rightKey) {
+	LD	A,(IX+-48)
+	OR	A,A
+	JR	Z,L_61
+;  265					if(!rightKeyNotAlpha) standing = false;
+	LD	A,(IX+-54)
+	OR	A,A
+	JR	NZ,L_46
+	LD	(IX+-37),0
+L_46:
+;  266					shootingDir = right;
+	LD	BC,0
+	LD	(IX+-22),BC
+;  267					arrow.x = hero.x + 20;
+	LD	IY,(_hero)
+	LEA	BC,IY+20
+	LD	(IX+-6),BC
+;  268					arrow.y = hero.y + 8;
+	LD	IY,(_hero+3)
+	LEA	BC,IY+8
+	LD	(IX+-3),BC
+;  269					arrowInit.x = hero.x + 20;
+	LD	IY,(_hero)
+	LEA	BC,IY+20
+	LD	(IX+-78),BC
+;  270					arrowInit.y = hero.y + 8;
+	LD	IY,(_hero+3)
+	LEA	IY,IY+8
+	LD	(IX+-75),IY
+;  271					if(arrow.x >= 300){
+	LD	HL,(IX+-6)
+	LD	BC,300
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_53
+;  272						arrow.x -= arrow.x - 301;
+	LD	BC,16776915
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	LD	BC,HL
+	LD	HL,(IX+-6)
+	OR	A,A
+	SBC	HL,BC
+	LD	(IX+-6),HL
+;  273						if(mapNum == 4) arrow.x = 284;
+	LD	HL,(IX+-15)
+	OR	A,A
+	LD	BC,4
+	SBC	HL,BC
+	JR	NZ,L_48
+	LD	BC,284
+	LD	(IX+-6),BC
+L_48:
+;  274						shootingDir = nothing;
+	LD	BC,8
+	LD	(IX+-22),BC
+;  275						gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+	LD	BC,4
+	PUSH	BC
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,(IX+-35)
+	PUSH	BC
+	CALL	_gfx_ScaledSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+;  276						gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-44)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  277						gfx_TransparentSprite(arrowSpr, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-72)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  278						gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  279						gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-51)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  280						goto pastDisplaySprite;
+	JR	L_113
+;  281					}
+;  282					else if(mapNum == 4 && arrow.x > 300) arrow.x += arrow.x - 300;
+L_53:
+	LD	BC,4
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_61
+	LD	BC,(IX+-6)
+	LD	HL,300
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	P,L_61
+	LD	HL,(IX+-6)
+	LD	BC,(IX+-6)
+	LD	DE,16776916
+	ADD	HL,DE
+	ADD	HL,BC
+	LD	(IX+-6),HL
+;  283				}
+L_61:
+;  284				if(leftKey) {
+	LD	A,(IX+-47)
+	OR	A,A
+	JR	Z,L_62
+;  285					if(!leftKeyNotAlpha) standing = false;
+	LD	A,(IX+-55)
+	OR	A,A
+	JR	NZ,L_56
+	LD	(IX+-37),0
+L_56:
+;  286					shootingDir = left;
+	LD	BC,1
+	LD	(IX+-22),BC
+;  287					arrow.x = hero.x - 20;
+	LD	IY,(_hero)
+	LEA	BC,IY+-20
+	LD	(IX+-6),BC
+;  288					arrow.y = hero.y + 8;
+	LD	IY,(_hero+3)
+	LEA	BC,IY+8
+	LD	(IX+-3),BC
+;  289					arrowInit.x = hero.x - 20;
+	LD	IY,(_hero)
+	LEA	BC,IY+-20
+	LD	(IX+-78),BC
+;  290					arrowInit.y = hero.y + 8;
+	LD	IY,(_hero+3)
+	LEA	IY,IY+8
+	LD	(IX+-75),IY
+;  291					if(arrow.x < 0){
+	LD	HL,(IX+-6)
+	CALL	__icmpzero
+	JP	P,L_62
+;  292						arrow.x += 0 - arrow.x;
+	LD	HL,(IX+-6)
+	CALL	__ineg
+	LD	BC,(IX+-6)
+	ADD	HL,BC
+	LD	(IX+-6),HL
+;  293						if(mapNum == 4) arrow.x = 20;
+	LD	HL,(IX+-15)
+	OR	A,A
+	LD	BC,4
+	SBC	HL,BC
+	JR	NZ,L_58
+	LD	BC,20
+	LD	(IX+-6),BC
+L_58:
+;  294						shootingDir = nothing;
+	LD	BC,8
+	LD	(IX+-22),BC
+;  295						gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+	LD	BC,4
+	PUSH	BC
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,(IX+-35)
+	PUSH	BC
+	CALL	_gfx_ScaledSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+;  296						gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-44)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  297						gfx_TransparentSprite(arrowSprLeft, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-84)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  298						gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  299						gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-51)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  300						goto pastDisplaySprite;
+	JR	L_113
+;  301					}
+;  302				}
+L_62:
+;  303				gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-44)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  304				pastDisplaySprite:
+;  305					0;
+;  306			}
+L_113:
+;  307			if(shootingDir != nothing){
 	LD	BC,8
 	LD	HL,(IX+-22)
 	OR	A,A
 	SBC	HL,BC
-	JR	Z,L_77
-;  287				gfx_Sprite_NoClip(behindArrow, arrow.x, arrow.y);
-	LD	C,(IX+-9)
+	JR	Z,L_121
+;  308				gfx_Sprite_NoClip(behindArrow, arrow.x, arrow.y);
+	LD	C,(IX+-3)
 	LD	B,0
 	PUSH	BC
-	LD	BC,(IX+-12)
+	LD	BC,(IX+-6)
 	PUSH	BC
-	LD	BC,(IX+-56)
+	LD	BC,(IX+-44)
 	PUSH	BC
 	CALL	_gfx_Sprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  288				if(shootingDir == right){
+;  309				if(shootingDir == right){
 	LD	HL,(IX+-22)
 	CALL	__icmpzero
-	JR	NZ,L_57
-;  289					arrow.x += 5;
-	LD	IY,(IX+-12)
-	LEA	IY,IY+5
-	LD	(IX+-12),IY
-;  290					arrowDistance = arrow.x - arrowInit.x;
-	LD	BC,(IX+-34)
-	LD	HL,(IX+-12)
+	JR	NZ,L_68
+;  310					arrow.x += 4;
+	LD	IY,(IX+-6)
+	LEA	IY,IY+4
+	LD	(IX+-6),IY
+;  311					arrowDistance = arrow.x - arrowInit.x;
+	LD	BC,(IX+-78)
+	LD	HL,(IX+-6)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
 	CALL	__itol
 	CALL	__ltof
-	LD	(IX+-95),BC
-	LD	(IX+-92),A
-;  291					if(arrowDistance < 100) y = arrowInit.y + 10;
+	LD	(IX+-67),BC
+	LD	(IX+-64),A
+;  312					if(arrowDistance >= 100) arrow.y = arrowInit.y + floor((arrowDistance - 100)*(arrowDistance - 100) / 1000 + 10);
 	LD	HL,BC
 	LD	BC,13107200
-	LD	E,(IX+-92)
+	LD	E,(IX+-64)
 	LD	A,66
 	CALL	__fcmp
-;  292					if(arrowDistance >= 100) arrow.y = arrowInit.y + floor((arrowDistance - 100)*(arrowDistance - 100) / 500 + 10);
-	LD	HL,(IX+-95)
-	LD	E,(IX+-92)
-	LD	BC,13107200
-	LD	A,66
-	CALL	__fcmp
-	JP	M,L_57
+	JP	M,L_68
 	LD	HL,13107200
 	LD	E,66
-	LD	BC,(IX+-95)
-	LD	A,(IX+-92)
+	LD	BC,(IX+-67)
+	LD	A,(IX+-64)
 	CALL	__fsub
 	LD	E,A
 	LD	HL,BC
 	CALL	__fmul
-	LD	HL,16384000
-	LD	E,67
+	LD	HL,7995392
+	LD	E,68
 	CALL	__fdiv
 	LD	HL,2097152
 	LD	E,65
@@ -1360,13 +1625,13 @@ L_64:
 	PUSH	BC
 	PUSH	HL
 	LD	HL,IY
-	LD	BC,-185
+	LD	BC,-221
 	CALL	__istix
 	POP	HL
 	POP	BC
 	CALL	_floor
 	PUSH	BC
-	LD	BC,-185
+	LD	BC,-221
 	PUSH	HL
 	CALL	__ildix
 	LD	IY,HL
@@ -1374,381 +1639,893 @@ L_64:
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	BC,(IX+-31)
+	LD	BC,(IX+-75)
 	CALL	__itol
 	CALL	__ltof
 	PUSH	IY
 	LEA	IY,IX+-128	; spill
-	LD	(IY+-50),H
-	LD	(IY+-51),E	; unspill
-	LD	H,(IY+-50)
-	LD	(IY+-46),HL
-	LD	(IY+-54),HL	; unspill
-	LD	HL,(IY+-46)
+	LD	(IY+-73),H
+	LD	(IY+-81),E	; unspill
+	LD	H,(IY+-73)
+	LD	(IY+-77),HL
+	LD	(IY+-84),HL	; unspill
+	LD	HL,(IY+-77)
 	POP	IY
 	LD	HL,BC
 	LD	E,A
 	PUSH	IY
 	LEA	IY,IX+-128	; spill
-	LD	(IY+-50),H
-	LD	H,(IY+-51)
+	LD	(IY+-73),H
+	LD	H,(IY+-81)
 	POP	IY
 	LD	A,H
 	PUSH	IY
 	LEA	IY,IX+-128	; unspill
-	LD	H,(IY+-50)
-	LD	(IY+-46),HL
-	LD	HL,(IY+-54)
+	LD	H,(IY+-73)
+	LD	(IY+-77),HL
+	LD	HL,(IY+-84)
 	POP	IY
 	LD	BC,HL
 	PUSH	IY
 	LEA	IY,IX+-128	; unspill
-	LD	HL,(IY+-46)
+	LD	HL,(IY+-77)
 	POP	IY
 	CALL	__fadd
 	CALL	__ftol
-	LD	(IX+-9),BC
-;  293				}
-L_57:
-;  294				gfx_GetSprite(behindArrow, arrow.x, arrow.y);
-	LD	BC,(IX+-9)
+	LD	(IX+-3),BC
+;  313				}
+L_68:
+;  314				if(shootingDir == left){
+	LD	BC,1
+	LD	HL,(IX+-22)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L__45
+	LD	A,1
+	JR	L__46
+L__45:
+	XOR	A,A
+L__46:
+	LD	(IX+-96),A
+	OR	A,A
+	JR	NZ,L_69
+;  315					arrow.x -= 4;
+	LD	IY,(IX+-6)
+	LEA	IY,IY+-4
+	LD	(IX+-6),IY
+;  316					arrowDistance = arrowInit.x -  arrow.x;
+	LD	BC,IY
+	LD	HL,(IX+-78)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	CALL	__itol
+	CALL	__ltof
+	LD	(IX+-67),BC
+	LD	(IX+-64),A
+;  317					if(arrowDistance >= 100) arrow.y = arrowInit.y + floor((arrowDistance - 100)*(arrowDistance - 100) / 1000 + 10);
+	LD	HL,BC
+	LD	BC,13107200
+	LD	E,(IX+-64)
+	LD	A,66
+	CALL	__fcmp
+	JP	M,L_69
+	LD	HL,13107200
+	LD	E,66
+	LD	BC,(IX+-67)
+	LD	A,(IX+-64)
+	CALL	__fsub
+	LD	E,A
+	LD	HL,BC
+	CALL	__fmul
+	LD	HL,7995392
+	LD	E,68
+	CALL	__fdiv
+	LD	HL,2097152
+	LD	E,65
+	CALL	__fadd
+	LD	DE,BC
+	LD	C,A
+	LD	B,0
 	PUSH	BC
-	LD	BC,(IX+-12)
+	PUSH	DE
 	PUSH	BC
-	LD	BC,(IX+-56)
+	PUSH	HL
+	LD	HL,IY
+	LD	BC,-221
+	CALL	__istix
+	POP	HL
+	POP	BC
+	CALL	_floor
+	PUSH	BC
+	LD	BC,-221
+	PUSH	HL
+	CALL	__ildix
+	LD	IY,HL
+	POP	HL
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	BC,(IX+-75)
+	CALL	__itol
+	CALL	__ltof
+	PUSH	IY
+	LEA	IY,IX+-128	; spill
+	LD	(IY+-73),H
+	LD	(IY+-74),E	; unspill
+	LD	H,(IY+-73)
+	LD	(IY+-77),HL
+	LD	(IY+-80),HL	; unspill
+	LD	HL,(IY+-77)
+	POP	IY
+	LD	HL,BC
+	LD	E,A
+	PUSH	IY
+	LEA	IY,IX+-128	; spill
+	LD	(IY+-73),H
+	LD	H,(IY+-74)
+	POP	IY
+	LD	A,H
+	PUSH	IY
+	LEA	IY,IX+-128	; unspill
+	LD	H,(IY+-73)
+	LD	(IY+-77),HL
+	LD	HL,(IY+-80)
+	POP	IY
+	LD	BC,HL
+	PUSH	IY
+	LEA	IY,IX+-128	; unspill
+	LD	HL,(IY+-77)
+	POP	IY
+	CALL	__fadd
+	CALL	__ftol
+	LD	(IX+-3),BC
+;  318				}
+L_69:
+;  319				gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-44)
 	PUSH	BC
 	CALL	_gfx_GetSprite
 	POP	BC
 	POP	BC
 	POP	BC
-;  295				gfx_TransparentSprite_NoClip(arrowSpr, arrow.x, arrow.y);
-	LD	C,(IX+-9)
+;  320				if(shootingDir == right) gfx_TransparentSprite(arrowSpr, arrow.x, arrow.y);
+	LD	HL,(IX+-22)
+	CALL	__icmpzero
+	JR	NZ,L_72
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-72)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite
+	POP	BC
+	POP	BC
+	POP	BC
+L_72:
+;  321				if(shootingDir == left) gfx_TransparentSprite(arrowSprLeft, arrow.x, arrow.y);
+	LD	A,(IX+-96)
+	OR	A,A
+	JR	NZ,L_111
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-84)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite
+	POP	BC
+	POP	BC
+	POP	BC
+L_111:
+;  322				for(i = 0; i <= 20; i += 4){
+	LD	BC,0
+	LD	(IX+-25),BC
+	JR	L_110
+L_108:
+;  323					arrowTouchingTip = gfx_GetPixel(arrow.x+i, arrow.y - 1) == 0 || gfx_GetPixel(arrow.x+i, arrow.y) == 0 || gfx_GetPixel(arrow.x+i, arrow.y + 1) == 0 || gfx_GetPixel(arrow.x+i, arrow.y + 2) == 0;
+	LD	C,(IX+-3)
+	DEC	C
 	LD	B,0
 	PUSH	BC
-	LD	BC,(IX+-12)
+	LD	BC,(IX+-25)
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	PUSH	HL
+	CALL	_gfx_GetPixel
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_76
+	LD	C,(IX+-3)
+	LD	B,0
 	PUSH	BC
-	LD	BC,(IX+-113)
+	LD	BC,(IX+-25)
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	PUSH	HL
+	CALL	_gfx_GetPixel
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_76
+	LD	C,(IX+-3)
+	INC	C
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-25)
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	PUSH	HL
+	CALL	_gfx_GetPixel
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_76
+	LD	C,(IX+-3)
+	INC	C
+	INC	C
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-25)
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	PUSH	HL
+	CALL	_gfx_GetPixel
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	NZ,L_77
+L_76:
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-6),BC
+	JR	L_78
+L_77:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-6),BC
+L_78:
+	LEA	IY,IX+-128
+	LD	A,(IY+-6)
+	LD	(IX+-69),A
+;  324					arrowTouchingBottom = gfx_GetPixel(arrow.x+i, arrow.y + 3) == 0;
+	LD	A,(IX+-3)
+	ADD	A,3
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-25)
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	PUSH	HL
+	CALL	_gfx_GetPixel
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	NZ,L__56
+	LD	A,1
+	JR	L__57
+L__56:
+	XOR	A,A
+L__57:
+	LD	(IX+-68),A
+;  325					if(arrowTouchingTip || arrow.x < 0 || arrow.y < 0 || arrow.y > 240 || arrow.x > 300 || arrowTouchingBottom) {
+	LD	A,(IX+-69)
+	OR	A,A
+	JR	NZ,L_107
+	LD	HL,(IX+-6)
+	CALL	__icmpzero
+	JP	M,L_107
+	LD	HL,(IX+-3)
+	CALL	__icmpzero
+	CALL	__setflag
+	JP	M,L_107
+	LD	BC,(IX+-3)
+	LD	HL,240
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_107
+	LD	BC,(IX+-6)
+	LD	HL,300
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_107
+	LD	A,(IX+-68)
+	OR	A,A
+	JR	Z,L_109
+L_107:
+;  326						//dbg_ClearConsole();
+;  327						//dbg_sprintf(dbgout, "i = %d\n", i);
+;  328						//dbg_sprintf(dbgout, "arrowTouchingTip = %d\n", arrowTouchingTip);
+;  329						//dbg_sprintf(dbgout, "arrowTouchingBottom = %d\n", arrowTouchingBottom);
+;  330						//while(!os_GetCSC());
+;  331						if(shootingDir == right && i <= 16 && !(arrow.x > 300) && !(arrow.x < 0) && !(arrow.y < 0) && !(arrow.y > 240) && arrowTouchingTip && (!arrowTouchingBottom || i >= 3))	{
+	LD	HL,(IX+-22)
+	CALL	__icmpzero
+	JR	NZ,L_103
+	LD	BC,(IX+-25)
+	LD	HL,16
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_103
+	LD	BC,(IX+-6)
+	LD	HL,300
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_103
+	LD	HL,(IX+-6)
+	CALL	__icmpzero
+	CALL	__setflag
+	JP	M,L_103
+	LD	HL,(IX+-3)
+	CALL	__icmpzero
+	CALL	__setflag
+	JP	M,L_103
+	LD	BC,(IX+-3)
+	LD	HL,240
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_103
+	LD	A,(IX+-69)
+	OR	A,A
+	JR	Z,L_103
+	LD	A,(IX+-68)
+	OR	A,A
+	JR	Z,L_93
+	LD	BC,3
+	LD	HL,(IX+-25)
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_103
+L_93:
+;  332							arrow.x -= 20 - i;
+	LD	HL,20
+	LD	BC,(IX+-25)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,(IX+-6)
+	OR	A,A
+	SBC	HL,BC
+	LD	(IX+-6),HL
+;  333	
+;  334							gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+	LD	BC,4
+	PUSH	BC
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,(IX+-35)
+	PUSH	BC
+	CALL	_gfx_ScaledSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+;  335							gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-44)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  336							gfx_TransparentSprite(arrowSpr, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-72)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  337							gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  338							gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-51)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  296				if(gfx_GetPixel(arrow.x+20, arrow.y) == 0 || arrow.x > 300 || arrow.x < 0 || arrow.y < 0 || arrow.y > 240) shootingDir = nothing;
-	LD	C,(IX+-9)
-	LD	B,0
-	PUSH	BC
-	LD	IY,(IX+-12)
-	LEA	BC,IY+20
-	PUSH	BC
-	CALL	_gfx_GetPixel
-	POP	BC
-	POP	BC
+;  339	
+;  340						}
+L_103:
+;  341						if(shootingDir == left && i >= 2 && !(arrow.x > 300) && !(arrow.x < 0) && !(arrow.y < 0) && !(arrow.y > 240) && arrowTouchingTip && (!arrowTouchingBottom || i >= 3)) {
+	LD	BC,1
+	LD	HL,(IX+-22)
 	OR	A,A
-	JR	Z,L_62
-	LD	BC,(IX+-12)
+	SBC	HL,BC
+	JR	NZ,L_104
+	LD	BC,2
+	LD	HL,(IX+-25)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_104
+	LD	BC,(IX+-6)
 	LD	HL,300
 	OR	A,A
 	SBC	HL,BC
-	JP	M,L_62
-	LD	HL,(IX+-12)
+	CALL	__setflag
+	JP	M,L_104
+	LD	HL,(IX+-6)
 	CALL	__icmpzero
 	CALL	__setflag
-	JP	M,L_62
-	LD	HL,(IX+-9)
+	JP	M,L_104
+	LD	HL,(IX+-3)
 	CALL	__icmpzero
 	CALL	__setflag
-	JP	M,L_62
-	LD	BC,(IX+-9)
+	JP	M,L_104
+	LD	BC,(IX+-3)
 	LD	HL,240
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	P,L_77
-L_62:
+	JP	M,L_104
+	LD	A,(IX+-69)
+	OR	A,A
+	JR	Z,L_104
+	LD	A,(IX+-68)
+	OR	A,A
+	JR	Z,L_102
+	LD	BC,3
+	LD	HL,(IX+-25)
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_104
+L_102:
+;  342							arrow.x += i;
+	LD	BC,(IX+-25)
+	LD	HL,(IX+-6)
+	ADD	HL,BC
+	LD	(IX+-6),HL
+;  343	
+;  344							gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
+	LD	BC,4
+	PUSH	BC
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,(IX+-35)
+	PUSH	BC
+	CALL	_gfx_ScaledSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+;  345							gfx_GetSprite(behindArrow, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-44)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  346							gfx_TransparentSprite(arrowSprLeft, arrow.x, arrow.y);
+	LD	BC,(IX+-3)
+	PUSH	BC
+	LD	BC,(IX+-6)
+	PUSH	BC
+	LD	BC,(IX+-84)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  347							gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  348							gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-51)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  349						}
+L_104:
+;  350						shootingDir = nothing;
 	LD	BC,8
 	LD	(IX+-22),BC
-;  297			}
-L_77:
-;  298	
-;  299			rightKeyNotAlpha = (modeKey || rightKey) && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-	LD	A,(IX+-49)
+;  351						arrowDistance = 80;
+	LD	BC,10485760
+	LD	(IX+-67),BC
+	LD	A,66
+	LD	(IX+-64),A
+;  352						if(alphaReleased) standing = true;
+	LD	A,(IX+-32)
 	OR	A,A
-	JR	NZ,L_72
-	LD	A,(IX+-37)
-	OR	A,A
-	JR	Z,L_74
-L_72:
-	LD	A,(IX+-43)
-	OR	A,A
-	JR	Z,L_73
-	LD	A,(16056342)
-	OR	A,A
-	JR	NZ,L_67
-	LD	BC,1
-	LD	(IX+-119),BC
-	JR	L_68
-L_67:
-	LD	BC,0
-	LD	(IX+-119),BC
-L_68:
-	LD	A,(IX+-119)
-	AND	A,1
-	UEXT	HL
-	LD	L,A
-	CALL	__icmpzero
-	JR	Z,L_73
-	LD	BC,8
-	LD	HL,(IX+-22)
+	JR	Z,L_121
+	LD	(IX+-37),1
+;  353						break;
+	JR	L_121
+;  354					}
+;  355				}
+L_109:
+	LD	IY,(IX+-25)
+	LEA	IY,IY+4
+	LD	(IX+-25),IY
+L_110:
+	LD	BC,(IX+-25)
+	LD	HL,20
 	OR	A,A
 	SBC	HL,BC
-	JR	Z,L_74
-L_73:
-	LD	BC,1
-	LD	(IX+-122),BC
-	JR	L_75
-L_74:
-	LD	BC,0
-	LD	(IX+-122),BC
-L_75:
-	LD	A,(IX+-122)
-	LD	(IX+-57),A
-;  300			leftKeyNotAlpha = (secondKey || leftKey) && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-	LD	A,(IX+-50)
+	JP	P,L_108
+;  356			}
+L_121:
+;  357	
+;  358			if(!alphaKey && !kb_Data[3] & kb_0 && !alphaReleased) {
+	LD	A,(IX+-46)
 	OR	A,A
-	JR	NZ,L_85
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	Z,L_87
-L_85:
-	LD	A,(IX+-43)
-	OR	A,A
-	JR	Z,L_86
+	JR	NZ,L_136
 	LD	A,(16056342)
 	OR	A,A
-	JR	NZ,L_80
-	LD	BC,1
-	LD	(IX+-125),BC
-	JR	L_81
-L_80:
-	LD	BC,0
-	LD	(IX+-125),BC
-L_81:
-	LD	A,(IX+-125)
-	AND	A,1
-	UEXT	HL
-	LD	L,A
-	CALL	__icmpzero
-	JR	Z,L_86
-	LD	BC,8
-	LD	HL,(IX+-22)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_87
-L_86:
-	LD	BC,1
-	LD	(IX+-128),BC
-	JR	L_88
-L_87:
-	LD	BC,0
-	LD	(IX+-128),BC
-L_88:
-	LD	A,(IX+-128)
-	LD	(IX+-53),A
-;  301			downKeyNotAlpha = downKey && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-	LD	A,(IX+-52)
-	OR	A,A
-	JR	Z,L_98
-	LD	A,(IX+-43)
-	OR	A,A
-	JR	Z,L_97
-	LD	A,(16056342)
-	OR	A,A
-	JR	NZ,L_91
-	LD	BC,1
-	LEA	IY,IX+-128
-	LD	(IY+-3),BC
-	JR	L_92
-L_91:
-	LD	BC,0
-	LEA	IY,IX+-128
-	LD	(IY+-3),BC
-L_92:
-	LEA	IY,IX+-128
-	LD	A,(IY+-3)
-	AND	A,1
-	UEXT	HL
-	LD	L,A
-	CALL	__icmpzero
-	JR	Z,L_97
-	LD	BC,8
-	LD	HL,(IX+-22)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_98
-L_97:
-	LD	BC,1
-	LEA	IY,IX+-128
-	LD	(IY+-6),BC
-	JR	L_99
-L_98:
-	LD	BC,0
-	LEA	IY,IX+-128
-	LD	(IY+-6),BC
-L_99:
-	LEA	IY,IX+-128
-	LD	A,(IY+-6)
-	LD	(IX+-84),A
-;  302			upKeyNotAlpha = upKey && (!(alphaKey && !kb_Data[3] & kb_0) || shootingDir != nothing);
-	LD	A,(IX+-44)
-	OR	A,A
-	JR	Z,L_109
-	LD	A,(IX+-43)
-	OR	A,A
-	JR	Z,L_108
-	LD	A,(16056342)
-	OR	A,A
-	JR	NZ,L_102
+	JR	NZ,L_115
 	LD	BC,1
 	LEA	IY,IX+-128
 	LD	(IY+-9),BC
-	JR	L_103
-L_102:
+	JR	L_116
+L_115:
 	LD	BC,0
 	LEA	IY,IX+-128
 	LD	(IY+-9),BC
-L_103:
+L_116:
 	LEA	IY,IX+-128
 	LD	A,(IY+-9)
 	AND	A,1
 	UEXT	HL
 	LD	L,A
 	CALL	__icmpzero
-	JR	Z,L_108
+	JR	Z,L_136
+	LD	A,(IX+-32)
+	OR	A,A
+	JR	NZ,L_136
+;  359				alphaReleased = true;
+	LD	(IX+-32),1
+;  360				standing = true;
+	LD	(IX+-37),1
+;  361			}
+L_136:
+;  362	
+;  363			rightKeyNotAlpha = (modeKey || rightKey) && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+	LD	A,(IX+-52)
+	OR	A,A
+	JR	NZ,L_129
+	LD	A,(IX+-48)
+	OR	A,A
+	JR	Z,L_133
+L_129:
+	LD	A,(IX+-46)
+	OR	A,A
+	JR	Z,L_131
+	LD	A,(16056342)
+	OR	A,A
+	JR	NZ,L_124
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-12),BC
+	JR	L_125
+L_124:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-12),BC
+L_125:
+	LEA	IY,IX+-128
+	LD	A,(IY+-12)
+	AND	A,1
+	UEXT	HL
+	LD	L,A
+	CALL	__icmpzero
+	JR	Z,L_131
 	LD	BC,8
 	LD	HL,(IX+-22)
 	OR	A,A
 	SBC	HL,BC
-	JR	Z,L_109
-L_108:
+	JR	Z,L_133
+L_131:
+	LD	A,(IX+-32)
+	OR	A,A
+	JR	NZ,L_132
+	LD	A,(IX+-37)
+	OR	A,A
+	JR	Z,L_133
+L_132:
 	LD	BC,1
 	LEA	IY,IX+-128
-	LD	(IY+-12),BC
-	JR	L_110
-L_109:
+	LD	(IY+-15),BC
+	JR	L_134
+L_133:
 	LD	BC,0
 	LEA	IY,IX+-128
-	LD	(IY+-12),BC
-L_110:
+	LD	(IY+-15),BC
+L_134:
 	LEA	IY,IX+-128
-	LD	A,(IY+-12)
-	LD	(IX+-51),A
-;  303			
-;  304	
-;  305			
-;  306	
-;  307	
-;  308			tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0);
+	LD	A,(IY+-15)
+	LD	(IX+-54),A
+;  364			leftKeyNotAlpha = (secondKey || leftKey) && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+	LD	A,(IX+-53)
+	OR	A,A
+	JR	NZ,L_144
+	LD	A,(IX+-47)
+	OR	A,A
+	JR	Z,L_148
+L_144:
+	LD	A,(IX+-46)
+	OR	A,A
+	JR	Z,L_146
+	LD	A,(16056342)
+	OR	A,A
+	JR	NZ,L_139
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-18),BC
+	JR	L_140
+L_139:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-18),BC
+L_140:
+	LEA	IY,IX+-128
+	LD	A,(IY+-18)
+	AND	A,1
+	UEXT	HL
+	LD	L,A
+	CALL	__icmpzero
+	JR	Z,L_146
+	LD	BC,8
+	LD	HL,(IX+-22)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_148
+L_146:
+	LD	A,(IX+-32)
+	OR	A,A
+	JR	NZ,L_147
+	LD	A,(IX+-37)
+	OR	A,A
+	JR	Z,L_148
+L_147:
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-21),BC
+	JR	L_149
+L_148:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-21),BC
+L_149:
+	LEA	IY,IX+-128
+	LD	A,(IY+-21)
+	LD	(IX+-55),A
+;  365			downKeyNotAlpha = downKey && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+	LD	A,(IX+-99)
+	OR	A,A
+	JR	Z,L_161
+	LD	A,(IX+-46)
+	OR	A,A
+	JR	Z,L_159
+	LD	A,(16056342)
+	OR	A,A
+	JR	NZ,L_152
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-24),BC
+	JR	L_153
+L_152:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-24),BC
+L_153:
+	LEA	IY,IX+-128
+	LD	A,(IY+-24)
+	AND	A,1
+	UEXT	HL
+	LD	L,A
+	CALL	__icmpzero
+	JR	Z,L_159
+	LD	BC,8
+	LD	HL,(IX+-22)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_161
+L_159:
+	LD	A,(IX+-32)
+	OR	A,A
+	JR	NZ,L_160
+	LD	A,(IX+-37)
+	OR	A,A
+	JR	Z,L_161
+L_160:
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-27),BC
+	JR	L_162
+L_161:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-27),BC
+L_162:
+	LEA	IY,IX+-128
+	LD	A,(IY+-27)
+	LD	(IX+-115),A
+;  366			upKeyNotAlpha = upKey && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
+	LD	A,(IX+-91)
+	OR	A,A
+	JR	Z,L_174
+	LD	A,(IX+-46)
+	OR	A,A
+	JR	Z,L_172
+	LD	A,(16056342)
+	OR	A,A
+	JR	NZ,L_165
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-30),BC
+	JR	L_166
+L_165:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-30),BC
+L_166:
+	LEA	IY,IX+-128
+	LD	A,(IY+-30)
+	AND	A,1
+	UEXT	HL
+	LD	L,A
+	CALL	__icmpzero
+	JR	Z,L_172
+	LD	BC,8
+	LD	HL,(IX+-22)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_174
+L_172:
+	LD	A,(IX+-32)
+	OR	A,A
+	JR	NZ,L_173
+	LD	A,(IX+-37)
+	OR	A,A
+	JR	Z,L_174
+L_173:
+	LD	BC,1
+	LEA	IY,IX+-128
+	LD	(IY+-33),BC
+	JR	L_175
+L_174:
+	LD	BC,0
+	LEA	IY,IX+-128
+	LD	(IY+-33),BC
+L_175:
+	LEA	IY,IX+-128
+	LD	A,(IY+-33)
+	LD	(IX+-56),A
+;  367			
+;  368			tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0, hero.x , hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
-	LD	BC,(IX+-42)
+	LD	BC,(IX+-41)
 	DEC	BC
 	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	LD	BC,3
 	PUSH	BC
-	PUSH	BC
-	PUSH	HL
-	LD	HL,IY
-	LD	BC,-185
-	CALL	__istix
-	POP	HL
-	POP	BC
 	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	(IX+-60),A
+;  369			tempBool2 = isTouching(bottomFeet, false, 0, 0, hero.x , hero.y);
+	LD	BC,(_hero+3)
 	PUSH	BC
-	LD	BC,-185
-	PUSH	HL
-	CALL	__ildix
-	LD	IY,HL
-	POP	HL
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	LD	(IX+-48),A
-;  309			tempBool2 = isTouching(bottomFeet, false, 0, 0);
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
 	PUSH	BC
 	LD	BC,3
 	PUSH	BC
-	PUSH	BC
-	PUSH	HL
-	LD	HL,IY
-	LD	BC,-185
-	CALL	__istix
-	POP	HL
-	POP	BC
 	CALL	_isTouching
-	PUSH	BC
-	LD	BC,-185
-	PUSH	HL
-	CALL	__ildix
-	LD	IY,HL
-	POP	HL
 	POP	BC
 	POP	BC
 	POP	BC
 	POP	BC
 	POP	BC
-	LD	(IX+-28),A
-;  310			velocity = (hero.y - lastStill.y ) / 50 + 2;
+	POP	BC
+	LD	(IX+-31),A
+;  370			velocity = (hero.y - lastStill.y ) / 50 + 2;
 	LD	HL,(_hero+3)
-	LD	DE,(IX+-3)
-	LD	BC,50
-;  311	
-;  312			dbg_ClearConsole();
-;  313			dbg_sprintf(dbgout, "hero = (%d, %d)\n", hero.x, hero.y);
-;  314			dbg_sprintf(dbgout, "velocity = %d\n", velocity);
-;  315			dbg_sprintf(dbgout, "keyIsReleased = %d\n", keyIsReleased);
-;  316			dbg_sprintf(dbgout, "ascending = %d\n", ascending);
-;  317			dbg_sprintf(dbgout, "inLadder = %d\n", inLadder);
-;  318			dbg_sprintf(dbgout, "doubleJumped = %d\n", doubleJumped);
-;  319			dbg_sprintf(dbgout, "jumpingDir = %d\n", jumpingDir);
-;  320			dbg_sprintf(dbgout, "tempBool1 = %d\n", tempBool1);
-;  321			dbg_sprintf(dbgout, "tempBool2 = %d\n", tempBool2);
-;  322			gfx_BlitBuffer();
-	PUSH	IY
-	LEA	IY,IX+-128	; spill
-	LD	(IY+-46),HL
-	POP	IY
-	LD	HL,1
-	PUSH	IY
-	LEA	IY,IX+-128	; spill
-	LD	(IY+-49),HL	; unspill
-	LD	HL,(IY+-46)
-	POP	IY
+	LD	BC,(IX+-9)
 	OR	A,A
-	SBC	HL,DE
+	SBC	HL,BC
+	LD	BC,50
 	CALL	__idivs
 	INC	HL
 	INC	HL
-	LD	(IX+-42),HL
-	PUSH	IY
-	LEA	IY,IX+-128	; unspill
-	LD	HL,(IY+-49)
-	POP	IY
-	PUSH	HL
-	CALL	_gfx_Blit
-	POP	BC
-;  323			//while(!os_GetCSC());
-;  324	
-;  325			if(((rightKeyNotAlpha && !isTouching(rightSide, false, 0, 1)) || (leftKeyNotAlpha && !isTouching(leftSide, false, 0, -1))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
-	LD	A,(IX+-57)
+	LD	(IX+-41),HL
+;  371	
+;  372			dbg_ClearConsole();
+;  373			dbg_sprintf(dbgout, "hero = (%d, %d)\n", hero.x, hero.y);
+;  374			dbg_sprintf(dbgout, "velocity = %d\n", velocity);
+;  375			dbg_sprintf(dbgout, "keyIsReleased = %d\n", keyIsReleased);
+;  376			dbg_sprintf(dbgout, "ascending = %d\n", ascending);
+;  377			dbg_sprintf(dbgout, "inLadder = %d\n", inLadder);
+;  378			dbg_sprintf(dbgout, "doubleJumped = %d\n", doubleJumped);
+;  379			dbg_sprintf(dbgout, "jumpingDir = %d\n", jumpingDir);
+;  380			dbg_sprintf(dbgout, "tempBool1 = %d\n", tempBool1);
+;  381			dbg_sprintf(dbgout, "tempBool2 = %d\n", tempBool2);
+;  382			dbg_sprintf(dbgout, "shootingDir = %d\n", shootingDir);
+;  383			dbg_sprintf(dbgout, "arrowInit = (%d, %d)\n", arrowInit.x, arrowInit.y);
+;  384			// gfx_BlitBuffer();
+;  385	
+;  386			if(((rightKeyNotAlpha && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) || (leftKeyNotAlpha && !isTouching(leftSide, false, 0, -1, hero.x , hero.y))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
+	LD	A,(IX+-54)
 	OR	A,A
-	JR	Z,L_132
+	JR	Z,L_200
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,1
 	PUSH	BC
 	LD	BC,0
@@ -1761,12 +2538,18 @@ L_110:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	Z,L_133
-L_132:
-	LD	A,(IX+-53)
+	JR	Z,L_201
+L_200:
+	LD	A,(IX+-55)
 	OR	A,A
-	JR	Z,L_337
+	JR	Z,L_405
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,16777215
 	PUSH	BC
 	LD	BC,0
@@ -1778,41 +2561,43 @@ L_132:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_337
-L_133:
+	JR	NZ,L_405
+L_201:
 	LD	BC,8
-	LD	HL,(IX+-27)
+	LD	HL,(IX+-30)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_337
+	JR	NZ,L_405
 	LD	A,(IX+-19)
 	OR	A,A
-	JR	Z,L_138
+	JR	Z,L_206
 	LD	BC,59
 	LD	HL,(_hero+3)
 	OR	A,A
 	SBC	HL,BC
-	JP	P,L_138
+	JP	P,L_206
 	LD	BC,(_hero+3)
 	LD	HL,41
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	P,L_138
+	JP	P,L_206
 	LD	BC,1
 	LD	HL,(IX+-15)
 	OR	A,A
 	SBC	HL,BC
-	JR	Z,L_337
-L_138:
-	LD	A,(IX+-24)
+	JR	Z,L_405
+L_206:
+	LD	A,(IX+-27)
 	OR	A,A
-	JR	NZ,L_337
-	LD	A,(IX+-23)
+	JR	NZ,L_405
+	LD	A,(IX+-26)
 	OR	A,A
-	JR	NZ,L_337
-;  326				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	JR	NZ,L_405
+;  387				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
@@ -1825,995 +2610,238 @@ L_138:
 	POP	BC
 	POP	BC
 	POP	BC
-;  327	
-;  328				//IF RIGHT IS PRESSED
-;  329				if(modeKey || rightKey) {
-	LD	A,(IX+-49)
+;  388	
+;  389				//IF RIGHT IS PRESSED
+;  390				if(modeKey || rightKey) {
+	LD	A,(IX+-52)
 	OR	A,A
-	JR	NZ,L_149
-	LD	A,(IX+-37)
+	JR	NZ,L_217
+	LD	A,(IX+-48)
 	OR	A,A
-	JR	Z,L_150
-L_149:
-;  330					facingRight = true;
-	LD	(IX+-38),1
-;  331					if((upKeyNotAlpha) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
-	LD	A,(IX+-51)
+	JR	Z,L_218
+L_217:
+;  391					facingRight = true;
+	LD	(IX+-36),1
+;  392					if((upKeyNotAlpha) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
+	LD	A,(IX+-56)
 	OR	A,A
-	JR	Z,L_148
+	JR	Z,L_216
 	LD	A,(IX+-19)
 	OR	A,A
-	JR	Z,L_147
+	JR	Z,L_215
 	LD	BC,1
 	LD	HL,(IX+-15)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_144
+	JR	NZ,L_212
 	LD	BC,40
 	LD	HL,(_hero+3)
 	OR	A,A
 	SBC	HL,BC
-	JR	Z,L_147
-L_144:
+	JR	Z,L_215
+L_212:
 	LD	BC,2
 	LD	HL,(IX+-15)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_148
+	JR	NZ,L_216
 	LD	BC,120
 	LD	HL,(_hero+3)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_148
-L_147:
-;  332						jumpingDir = right;
+	JR	NZ,L_216
+L_215:
+;  393						jumpingDir = right;
 	LD	BC,0
-	LD	(IX+-27),BC
-;  333						ascending = true;
-	LD	(IX+-23),1
-;  334						keyIsReleased = false;
-	LD	(IX+-35),0
-;  335						lastStill.x = hero.x;
+	LD	(IX+-30),BC
+;  394						ascending = true;
+	LD	(IX+-26),1
+;  395						keyIsReleased = false;
+	LD	(IX+-38),0
+;  396						lastStill.x = hero.x;
 	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  336						lastStill.y = hero.y;
+	LD	(IX+-12),BC
+;  397						lastStill.y = hero.y;
 	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  337						if(!tempBool2) doubleJumped = true;
-	LD	A,(IX+-28)
+	LD	(IX+-9),BC
+;  398						if(!tempBool2) doubleJumped = true;
+	LD	A,(IX+-31)
 	OR	A,A
-	JR	NZ,L_148
-	LD	(IX+-39),1
-;  338					}
-L_148:
-;  339					hero.x += 2;
+	JR	NZ,L_216
+	LD	(IX+-45),1
+;  399					}
+L_216:
+;  400					hero.x += 2;
 	LD	IY,(_hero)
 	LEA	BC,IY+2
 	LD	(_hero),BC
-;  340				};
-L_150:
-;  341				//IF LEFT IS PRESSED
-;  342				if(secondKey || leftKey){ 
-	LD	A,(IX+-50)
-	OR	A,A
-	JR	NZ,L_160
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	Z,L_177
-L_160:
-;  343					facingRight = false;
-	LD	(IX+-38),0
-;  344					if((upKeyNotAlpha) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
-	LD	A,(IX+-51)
-	OR	A,A
-	JR	Z,L_159
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	Z,L_158
-	LD	BC,1
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_155
-	LD	BC,40
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_158
-L_155:
-	LD	BC,2
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_159
-	LD	BC,120
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_159
-L_158:
-;  345						jumpingDir = left;
-	LD	BC,1
-	LD	(IX+-27),BC
-;  346						ascending = true;
-	LD	(IX+-23),1
-;  347						keyIsReleased = false;
-	LD	(IX+-35),0
-;  348	
-;  349						lastStill.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  350						lastStill.y = hero.y;
-	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  351						if(!tempBool2) doubleJumped = true;
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	NZ,L_159
-	LD	(IX+-39),1
-;  352					}				
-L_159:
-;  353					hero.x -= 2;
-	LD	IY,(_hero)
-	LEA	BC,IY+-2
-	LD	(_hero),BC
-;  354				}
-L_177:
-;  355	
-;  356				//IF IS IN AIR
-;  357				if(!tempBool2 && !inLadder){
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	NZ,L_176
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	NZ,L_176
-;  358						if(!tempBool1)	hero.y += velocity;
-	LD	A,(IX+-48)
-	OR	A,A
-	JR	NZ,L_166
-	LD	BC,(IX+-42)
-	LD	HL,(_hero+3)
-	ADD	HL,BC
-	LD	(_hero+3),HL
-;  359						else if(!tempBool2 && tempBool1) hero.y++;
-	JR	L_169
-L_166:
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	NZ,L_169
-	LD	A,(IX+-48)
-	OR	A,A
-	JR	Z,L_169
-	LD	BC,(_hero+3)
-	INC	BC
-	LD	(_hero+3),BC
-L_169:
-;  360	
-;  361						if(isTouching(rightSide, false, 0, 0)) hero.x--;
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	LD	BC,1
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	Z,L_172
-	LD	BC,(_hero)
-	DEC	BC
-	LD	(_hero),BC
-L_172:
-;  362						if(isTouching(leftSide, false, 0, 0)) hero.x++;
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	Z,L_179
-	LD	BC,(_hero)
-	INC	BC
-	LD	(_hero),BC
-;  363				}
-;  364				else if(!inLadder && tempBool2){
-	JR	L_179
-L_176:
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	NZ,L_179
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	Z,L_179
-;  365					lastStill.y = hero.y;
-	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  366				}
-L_179:
-;  367	
-;  368				if(isTouching(bottomFeet, true, 0, 0)) {
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	LD	BC,1
-	PUSH	BC
-	LD	BC,3
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	Z,L_180
-;  369					isBoosted = true;
-	LD	(IX+-24),1
-;  370					ascending = true;
-	LD	(IX+-23),1
-;  371					lastStill.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  372					lastStill.y = hero.y;
-	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  373				}
-L_180:
-;  374	
-;  375				inLadder = false;
-	LD	(IX+-19),0
-;  376				if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2 && hero.y >= 120)) inLadder = true;
-	LD	HL,(_hero)
-	LD	BC,106
-	OR	A,A
-	SBC	HL,BC
-	JP	M,L_187
-	LD	BC,(_hero)
-	LD	HL,136
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_187
-	LD	BC,39
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_187
-	LD	BC,(_hero+3)
-	LD	HL,140
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_187
-	LD	BC,1
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_188
-L_187:
-	LD	BC,271
-	LD	HL,(_hero)
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_190
-	LD	BC,2
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_190
-	LD	BC,120
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_190
-L_188:
-	LD	(IX+-19),1
-L_190:
-;  377	
-;  378				if(hero.x < 0) hero.x = 0;
-	LD	HL,(_hero)
-	CALL	__icmpzero
-	CALL	__setflag
-	JP	P,L_192
-	LD	BC,0
-	LD	(_hero),BC
-L_192:
-;  379				if(hero.x > 300) hero.x = 300;
-	LD	BC,(_hero)
-	LD	HL,300
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	P,L_193
-	LD	BC,300
-	LD	(_hero),BC
-L_193:
-;  380	
-;  381				gfx_GetSprite(behind_sprite, hero.x, hero.y);
-	LD	BC,(_hero+3)
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_GetSprite
-	POP	BC
-	POP	BC
-	POP	BC
-;  382	
-;  383				if(rightKey || modeKey){
-	LD	A,(IX+-37)
-	OR	A,A
-	JR	NZ,L_195
-	LD	A,(IX+-49)
-	OR	A,A
-	JR	Z,L_198
-L_195:
-;  384					distance = hero.x - lastStill.x;
-	LD	HL,(_hero)
-	LD	BC,(IX+-6)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	CALL	__itol
-	CALL	__ltof
-	LD	HL,BC
-	LD	BC,-144
-	LD	E,A
-	CALL	__lstix
-;  385					step = floor(distance/6);
-	LD	BC,-144
-	CALL	__lldix
-	LD	A,E
-	LD	BC,HL
-	LD	HL,12582912
-	LD	E,64
-	CALL	__fdiv
-	LD	DE,BC
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	PUSH	DE
-	CALL	_floor
-	POP	BC
-	POP	BC
-	LD	A,E
-	LD	BC,HL
-	CALL	__ftol
-	LD	(IX+-80),BC
-;  386	
-;  387					gfx_TransparentSprite_NoClip(heroRunRight[ step % 3 ], hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,3
-	LD	DE,(_hero)
-	PUSH	DE
-	LD	HL,(IX+-80)
-	CALL	__iremu
-	LD	BC,HL
-	ADD	HL,HL
-	ADD	HL,BC
-	LD	BC,HL
-	LD	HL,IX
-	LD	DE,-162
-	ADD	HL,DE
-	ADD	HL,BC
-	LD	BC,(HL)
-	PUSH	BC
-	CALL	_gfx_TransparentSprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  388				}
-L_198:
-;  389				if(secondKey || leftKey){
-	LD	A,(IX+-50)
-	OR	A,A
-	JR	NZ,L_197
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	Z,L_338
-L_197:
-;  390					distance = lastStill.x - hero.x;
-	LD	BC,(_hero)
-	LD	HL,(IX+-6)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	CALL	__itol
-	CALL	__ltof
-	LD	HL,BC
-	LD	BC,-144
-	LD	E,A
-	CALL	__lstix
-;  391					step = floor(distance/6);
-	LD	BC,-144
-	CALL	__lldix
-	LD	A,E
-	LD	BC,HL
-	LD	HL,12582912
-	LD	E,64
-	CALL	__fdiv
-	LD	DE,BC
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	PUSH	DE
-	CALL	_floor
-	POP	BC
-	POP	BC
-	LD	A,E
-	LD	BC,HL
-	CALL	__ftol
-	LD	(IX+-80),BC
-;  392	
-;  393					gfx_TransparentSprite_NoClip(heroRunLeft[ step % 3 ], hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,3
-	LD	DE,(_hero)
-	PUSH	DE
-	LD	HL,(IX+-80)
-	CALL	__iremu
-	LD	BC,HL
-	ADD	HL,HL
-	ADD	HL,BC
-	LD	BC,HL
-	LD	HL,IX
-	LD	DE,-153
-	ADD	HL,DE
-	ADD	HL,BC
-	LD	BC,(HL)
-	PUSH	BC
-	CALL	_gfx_TransparentSprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  394				}
-;  395	
-;  396			}
-;  397			//IF NOTHING IS PRESSED
-;  398			else{
-	JR	L_338
-L_337:
-;  399	
-;  400				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_Sprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  401	
-;  402	
-;  403				//IF IS IN AIR
-;  404				if(!tempBool2 && !inLadder && !ascending){
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	NZ,L_218
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	NZ,L_218
-	LD	A,(IX+-23)
-	OR	A,A
-	JR	NZ,L_218
-;  405	
-;  406						if(!tempBool1)	hero.y += velocity;
-	LD	A,(IX+-48)
-	OR	A,A
-	JR	NZ,L_205
-	LD	BC,(IX+-42)
-	LD	HL,(_hero+3)
-	ADD	HL,BC
-	LD	(_hero+3),HL
-;  407						else if(!tempBool2 && tempBool1) hero.y++;
-	JR	L_208
-L_205:
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	NZ,L_208
-	LD	A,(IX+-48)
-	OR	A,A
-	JR	Z,L_208
-	LD	BC,(_hero+3)
-	INC	BC
-	LD	(_hero+3),BC
-L_208:
-;  408	
-;  409						if(isTouching(rightSide, false, 0, 0)) hero.x--;
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	LD	BC,1
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	Z,L_211
-	LD	BC,(_hero)
-	DEC	BC
-	LD	(_hero),BC
-L_211:
-;  410						if(isTouching(leftSide, false, 0, 0)) hero.x++;
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	Z,L_212
-	LD	BC,(_hero)
-	INC	BC
-	LD	(_hero),BC
-L_212:
-;  411						gfx_GetSprite(behind_sprite, hero.x, hero.y);
-	LD	BC,(_hero+3)
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_GetSprite
-	POP	BC
-	POP	BC
-	POP	BC
-;  412				}
-;  413				else if(tempBool2 && !inLadder && !ascending){
-	JR	L_231
+;  401				};
 L_218:
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	Z,L_231
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	NZ,L_231
-	LD	A,(IX+-23)
-	OR	A,A
-	JR	NZ,L_231
-;  414					jumpingDir = nothing;
-	LD	BC,8
-	LD	(IX+-27),BC
-;  415					doubleJumped = false;
-	LD	(IX+-39),0
-;  416					keyIsReleased = false;
-	LD	(IX+-35),0
-;  417					if(isTouching(bottomFeet, true, 0, 0)) {
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	LD	BC,1
-	PUSH	BC
-	LD	BC,3
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	Z,L_231
-;  418						isBoosted = true;
-	LD	(IX+-24),1
-;  419						ascending = true;
-	LD	(IX+-23),1
-;  420						jumpingDir = nothing;
-	LD	BC,8
-	LD	(IX+-27),BC
-;  421						lastStill.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  422						lastStill.y = hero.y;
-	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  423						doubleJumped = false;
-	LD	(IX+-39),0
-;  424					}	
-;  425				}
-L_231:
-;  426	
-;  427				//IF ASCENDING
-;  428				if(ascending){
-	LD	A,(IX+-23)
-	OR	A,A
-	JR	Z,L_246
-;  429					inLadder = false;
-	LD	(IX+-19),0
-;  430					if(!isBoosted) velocity = -2;
-	LD	A,(IX+-24)
-	OR	A,A
-	JR	NZ,L_220
-	LD	BC,16777214
-	LD	(IX+-42),BC
-;  431					else velocity = -10;
-	JR	L_222
-L_220:
-	LD	BC,16777206
-	LD	(IX+-42),BC
-L_222:
-;  432	
-;  433					if(!isTouching(topHead, false, velocity + 1, 0)) hero.y += velocity;
-	LD	BC,0
-	PUSH	BC
-	LD	BC,(IX+-42)
-	INC	BC
-	PUSH	BC
-	LD	BC,0
-	PUSH	BC
-	LD	BC,2
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
+;  402				//IF LEFT IS PRESSED
+;  403				if(secondKey || leftKey){ 
+	LD	A,(IX+-53)
 	OR	A,A
 	JR	NZ,L_228
-	LD	BC,(IX+-42)
+	LD	A,(IX+-47)
+	OR	A,A
+	JR	Z,L_245
+L_228:
+;  404					facingRight = false;
+	LD	(IX+-36),0
+;  405					if((upKeyNotAlpha) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
+	LD	A,(IX+-56)
+	OR	A,A
+	JR	Z,L_227
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	Z,L_226
+	LD	BC,1
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_223
+	LD	BC,40
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_226
+L_223:
+	LD	BC,2
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_227
+	LD	BC,120
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_227
+L_226:
+;  406						jumpingDir = left;
+	LD	BC,1
+	LD	(IX+-30),BC
+;  407						ascending = true;
+	LD	(IX+-26),1
+;  408						keyIsReleased = false;
+	LD	(IX+-38),0
+;  409	
+;  410						lastStill.x = hero.x;
+	LD	BC,(_hero)
+	LD	(IX+-12),BC
+;  411						lastStill.y = hero.y;
+	LD	BC,(_hero+3)
+	LD	(IX+-9),BC
+;  412						if(!tempBool2) doubleJumped = true;
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	NZ,L_227
+	LD	(IX+-45),1
+;  413					}				
+L_227:
+;  414					hero.x -= 2;
+	LD	IY,(_hero)
+	LEA	BC,IY+-2
+	LD	(_hero),BC
+;  415				}
+L_245:
+;  416	
+;  417				//IF IS IN AIR
+;  418				if(!tempBool2 && !inLadder){
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	NZ,L_244
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	NZ,L_244
+;  419						if(!tempBool1)	hero.y += velocity;
+	LD	A,(IX+-60)
+	OR	A,A
+	JR	NZ,L_234
+	LD	BC,(IX+-41)
 	LD	HL,(_hero+3)
 	ADD	HL,BC
 	LD	(_hero+3),HL
-L_228:
-;  434					if(((lastStill.y - hero.y > 25 && !isBoosted) || (lastStill.y - hero.y > 160 && isBoosted)) || isTouching(topHead, false, velocity + 1, 0)) {
+;  420						else if(!tempBool2 && tempBool1) hero.y++;
+	JR	L_237
+L_234:
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	NZ,L_237
+	LD	A,(IX+-60)
+	OR	A,A
+	JR	Z,L_237
 	LD	BC,(_hero+3)
-	LD	HL,(IX+-3)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,25
-	OR	A,A
-	SBC	HL,BC
-	JP	P,L_225
-	LD	A,(IX+-24)
-	OR	A,A
-	JR	Z,L_227
-L_225:
-	LD	BC,(_hero+3)
-	LD	HL,(IX+-3)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,160
-	OR	A,A
-	SBC	HL,BC
-	JP	P,L_226
-	LD	A,(IX+-24)
-	OR	A,A
-	JR	NZ,L_227
-L_226:
-	LD	BC,0
-	PUSH	BC
-	LD	BC,(IX+-42)
 	INC	BC
+	LD	(_hero+3),BC
+L_237:
+;  421	
+;  422						if(isTouching(rightSide, false, 0, 0, hero.x , hero.y)) hero.x--;
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
 	PUSH	BC
 	LD	BC,0
 	PUSH	BC
-	LD	BC,2
+	PUSH	BC
+	PUSH	BC
+	LD	BC,1
 	PUSH	BC
 	CALL	_isTouching
 	POP	BC
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	Z,L_229
-L_227:
-;  435						ascending = false;
-	LD	(IX+-23),0
-;  436						isBoosted = false;
-	LD	(IX+-24),0
-;  437						lastStill.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  438						lastStill.y = hero.y;
-	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  439					}
-L_229:
-;  440					gfx_GetSprite(behind_sprite, hero.x, hero.y);
-	LD	BC,(_hero+3)
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_GetSprite
-	POP	BC
-	POP	BC
-	POP	BC
-;  441				}
-L_246:
-;  442	
-;  443				//MOVING LADDER
-;  444				if(inLadder && (upKeyNotAlpha) && !(leftKey || secondKey) && !(rightKey || modeKey)){
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	Z,L_245
-	LD	A,(IX+-51)
-	OR	A,A
-	JR	Z,L_245
-	LD	A,(IX+-36)
-	OR	A,A
-	JR	NZ,L_245
-	LD	A,(IX+-50)
-	OR	A,A
-	JR	NZ,L_245
-	LD	A,(IX+-37)
-	OR	A,A
-	JR	NZ,L_245
-	LD	A,(IX+-49)
-	OR	A,A
-	JR	NZ,L_245
-;  445					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_Sprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  446					hero.y -= 2;
-	LD	IY,(_hero+3)
-	LEA	BC,IY+-2
-	LD	(_hero+3),BC
-;  447					gfx_GetSprite(behind_sprite, hero.x, hero.y);
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_GetSprite
-	POP	BC
-	POP	BC
-	POP	BC
-;  448				}
-;  449				else if(inLadder && downKeyNotAlpha){
-	JR	L_251
-L_245:
-	LD	A,(IX+-19)
-	OR	A,A
-	JR	Z,L_251
-	LD	A,(IX+-84)
-	OR	A,A
-	JR	Z,L_251
-;  450					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_Sprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  451					if(hero.y != 140 && mapNum == 1 || mapNum != 1 && hero.y != 200) hero.y += 2;
-	LD	BC,140
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
 	JR	Z,L_240
-	LD	BC,1
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_241
+	LD	BC,(_hero)
+	DEC	BC
+	LD	(_hero),BC
 L_240:
-	LD	BC,1
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_242
-	LD	BC,200
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_242
-L_241:
-	LD	IY,(_hero+3)
-	LEA	BC,IY+2
-	LD	(_hero+3),BC
-L_242:
-;  452					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+;  423						if(isTouching(leftSide, false, 0, 0, hero.x , hero.y)) hero.x++;
 	LD	BC,(_hero+3)
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-18)
+	LD	BC,0
 	PUSH	BC
-	CALL	_gfx_GetSprite
+	PUSH	BC
+	PUSH	BC
+	PUSH	BC
+	CALL	_isTouching
 	POP	BC
 	POP	BC
 	POP	BC
-;  453				}
-L_251:
-;  454	
-;  455				if(!(upKey) && !keyIsReleased  && !doubleJumped && jumpingDir != nothing) keyIsReleased = true;
-	LD	A,(IX+-44)
+	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_260
-	LD	A,(IX+-35)
-	OR	A,A
-	JR	NZ,L_260
-	LD	A,(IX+-39)
-	OR	A,A
-	JR	NZ,L_260
-	LD	BC,8
-	LD	HL,(IX+-27)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_260
-	LD	(IX+-35),1
-L_260:
-;  456	
-;  457				
-;  458				//CHECK FOR JUMPING UP
-;  459				if(upKeyNotAlpha && !doubleJumped && !inLadder && ((keyIsReleased && jumpingDir != nothing) || (!keyIsReleased && jumpingDir == nothing))) {
-	LD	A,(IX+-51)
-	OR	A,A
-	JR	Z,L_335
-	LD	A,(IX+-39)
-	OR	A,A
-	JR	NZ,L_335
+	JR	Z,L_247
+	LD	BC,(_hero)
+	INC	BC
+	LD	(_hero),BC
+;  424				}
+;  425				else if(!inLadder && tempBool2){
+	JR	L_247
+L_244:
 	LD	A,(IX+-19)
 	OR	A,A
-	JR	NZ,L_335
-	LD	A,(IX+-35)
+	JR	NZ,L_247
+	LD	A,(IX+-31)
 	OR	A,A
-	JR	Z,L_256
-	LD	BC,8
-	LD	HL,(IX+-27)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_259
-L_256:
-	LD	A,(IX+-35)
-	OR	A,A
-	JR	NZ,L_335
-	LD	BC,8
-	LD	HL,(IX+-27)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_335
-L_259:
-;  460					jumpingDir = up;
-	LD	BC,2
-	LD	(IX+-27),BC
-;  461					isBoosted = false;
-	LD	(IX+-24),0
-;  462					ascending = true;
-	LD	(IX+-23),1
-;  463	
-;  464					lastStill.x = hero.x;
-	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  465					lastStill.y = hero.y;
+	JR	Z,L_247
+;  426					lastStill.y = hero.y;
 	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  466	
-;  467					keyIsReleased = false;
-	LD	(IX+-35),0
-;  468	
-;  469					if(!tempBool2) doubleJumped = true;
-	LD	A,(IX+-28)
-	OR	A,A
-	JR	NZ,L_335
-	LD	(IX+-39),1
-;  470					
-;  471				}
-L_335:
-;  472				//STANDING STILL ANIMATION
-;  473				if(jumpingDir == nothing && !isBoosted){
-	LD	BC,8
-	LD	HL,(IX+-27)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L__168
-	LD	A,1
-	JR	L__169
-L__168:
-	XOR	A,A
-L__169:
-	LD	(IX+-71),A
-	OR	A,A
-	JR	NZ,L_334
-	LD	A,(IX+-24)
-	OR	A,A
-	JR	NZ,L_334
-;  474	
-;  475					inLadder = false;
-	LD	(IX+-19),0
-;  476					if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2 && hero.y >= 120) && jumpingDir == nothing) inLadder = true;
-	LD	HL,(_hero)
-	LD	BC,106
-	OR	A,A
-	SBC	HL,BC
-	JP	M,L_269
-	LD	BC,(_hero)
-	LD	HL,136
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_269
-	LD	BC,39
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_269
+	LD	(IX+-9),BC
+;  427				}
+L_247:
+;  428	
+;  429				if(isTouching(bottomFeet, true, 0, 0, hero.x , hero.y)) {
 	LD	BC,(_hero+3)
-	LD	HL,140
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_269
-	LD	BC,1
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	Z,L_270
-L_269:
-	LD	BC,271
-	LD	HL,(_hero)
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_272
-	LD	BC,2
-	LD	HL,(IX+-15)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_272
-	LD	BC,120
-	LD	HL,(_hero+3)
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_272
-	LD	A,(IX+-71)
-	OR	A,A
-	JR	NZ,L_272
-L_270:
-	LD	(IX+-19),1
-L_272:
-;  477	
-;  478					if(isTouching(bottomFeet, true, 0, 0)) {
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
@@ -2826,135 +2854,96 @@ L_272:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	Z,L_273
-;  479						isBoosted = true;
-	LD	(IX+-24),1
-;  480						ascending = true;
-	LD	(IX+-23),1
-;  481						lastStill.x = hero.x;
+	JR	Z,L_248
+;  430					isBoosted = true;
+	LD	(IX+-27),1
+;  431					ascending = true;
+	LD	(IX+-26),1
+;  432					lastStill.x = hero.x;
 	LD	BC,(_hero)
-	LD	(IX+-6),BC
-;  482						lastStill.y = hero.y;
+	LD	(IX+-12),BC
+;  433					lastStill.y = hero.y;
 	LD	BC,(_hero+3)
-	LD	(IX+-3),BC
-;  483					}
-L_273:
-;  484	
-;  485					gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
+	LD	(IX+-9),BC
+;  434				}
+L_248:
+;  435	
+;  436				inLadder = false;
+	LD	(IX+-19),0
+;  437				if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2 && hero.y >= 120)) inLadder = true;
+	LD	HL,(_hero)
+	LD	BC,106
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_255
 	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-77)
-	PUSH	BC
-	CALL	_gfx_TransparentSprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  486				}
-;  487	
-;  488				//JUMPING RIGHT ANIMATION
-;  489				else if(jumpingDir == right){
-	JR	L_338
-L_334:
-	LD	HL,(IX+-27)
-	CALL	__icmpzero
-	JR	NZ,L_332
-;  490					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-18)
-	PUSH	BC
-	CALL	_gfx_Sprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  491	
-;  492					if(hero.x - lastStill.x <= 50 && !isTouching(rightSide, false, 0, 1)) hero.x += 2;
-	LD	BC,(IX+-6)
-	LD	HL,(_hero)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,50
-	OR	A,A
-	SBC	HL,BC
-	JP	M,L_280
-	LD	BC,1
-	PUSH	BC
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	LD	BC,1
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
-	OR	A,A
-	JR	NZ,L_280
-	LD	IY,(_hero)
-	LEA	BC,IY+2
-	LD	(_hero),BC
-;  493					else if(hero.x - lastStill.x > 50 && hero.x - lastStill.x <= 65 && !isTouching(rightSide, false, 0, 0)) hero.x++;
-	JR	L_282
-L_280:
-	LD	HL,(_hero)
-	LD	BC,(IX+-6)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,50
-	OR	A,A
-	SBC	HL,BC
-	JP	P,L_282
-	LD	HL,(_hero)
-	LD	BC,(IX+-6)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,65
+	LD	HL,136
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	M,L_282
-	LD	BC,0
-	PUSH	BC
-	PUSH	BC
-	PUSH	BC
-	LD	BC,1
-	PUSH	BC
-	CALL	_isTouching
-	POP	BC
-	POP	BC
-	POP	BC
-	POP	BC
+	JP	M,L_255
+	LD	BC,39
+	LD	HL,(_hero+3)
 	OR	A,A
-	JR	NZ,L_282
-	LD	BC,(_hero)
-	INC	BC
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_255
+	LD	BC,(_hero+3)
+	LD	HL,140
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_255
+	LD	BC,1
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_256
+L_255:
+	LD	BC,271
+	LD	HL,(_hero)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_258
+	LD	BC,2
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_258
+	LD	BC,120
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_258
+L_256:
+	LD	(IX+-19),1
+L_258:
+;  438	
+;  439				if(hero.x < 0) hero.x = 0;
+	LD	HL,(_hero)
+	CALL	__icmpzero
+	CALL	__setflag
+	JP	P,L_260
+	LD	BC,0
 	LD	(_hero),BC
-L_282:
-;  494	
-;  495					if(hero.x > 300) hero.x = 300;
+L_260:
+;  440				if(hero.x > 300) hero.x = 300;
 	LD	BC,(_hero)
 	LD	HL,300
 	OR	A,A
 	SBC	HL,BC
-	JP	P,L_283
+	CALL	__setflag
+	JP	P,L_261
 	LD	BC,300
 	LD	(_hero),BC
-L_283:
-;  496	
-;  497					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+L_261:
+;  441	
+;  442				gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	LD	BC,(_hero+3)
 	PUSH	BC
 	LD	BC,(_hero)
@@ -2965,103 +2954,136 @@ L_283:
 	POP	BC
 	POP	BC
 	POP	BC
-;  498	
-;  499					if(hero.x - lastStill.x <= 12) gfx_TransparentSprite_NoClip(HeroJumpRight0, hero.x, hero.y);
-	LD	BC,(IX+-6)
+;  443	
+;  444				if(rightKey || modeKey){
+	LD	A,(IX+-48)
+	OR	A,A
+	JR	NZ,L_263
+	LD	A,(IX+-52)
+	OR	A,A
+	JR	Z,L_266
+L_263:
+;  445					distance = hero.x - lastStill.x;
 	LD	HL,(_hero)
+	LD	BC,(IX+-12)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
-	LD	HL,12
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_289
+	CALL	__itol
+	CALL	__ltof
+	LD	(IX+-125),BC
+	LD	(IX+-122),A
+;  446					step = floor(distance/6);
+	LD	HL,12582912
+	LD	E,64
+	CALL	__fdiv
+	LD	DE,BC
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	PUSH	DE
+	CALL	_floor
+	POP	BC
+	POP	BC
+	LD	A,E
+	LD	BC,HL
+	CALL	__ftol
+	LD	(IX+-105),BC
+;  447	
+;  448					gfx_TransparentSprite_NoClip(heroRunRight[ step % 3 ], hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-61)
+	LD	BC,3
+	LD	DE,(_hero)
+	PUSH	DE
+	LD	HL,(IX+-105)
+	CALL	__iremu
+	LD	BC,HL
+	ADD	HL,HL
+	ADD	HL,BC
+	LD	BC,HL
+	LD	HL,IX
+	LD	DE,-191
+	ADD	HL,DE
+	ADD	HL,BC
+	LD	BC,(HL)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  500					else if(hero.x - lastStill.x > 12 && hero.x - lastStill.x <= 24) gfx_TransparentSprite_NoClip(HeroJumpRight1, hero.x, hero.y);
-	JR	L_338
-L_289:
-	LD	HL,(_hero)
-	LD	BC,(IX+-6)
+;  449				}
+L_266:
+;  450				if(secondKey || leftKey){
+	LD	A,(IX+-53)
+	OR	A,A
+	JR	NZ,L_265
+	LD	A,(IX+-47)
+	OR	A,A
+	JR	Z,L_407
+L_265:
+;  451					distance = lastStill.x - hero.x;
+	LD	BC,(_hero)
+	LD	HL,(IX+-12)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
-	LD	HL,12
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	P,L_287
-	LD	HL,(_hero)
-	LD	BC,(IX+-6)
-	OR	A,A
-	SBC	HL,BC
+	CALL	__itol
+	CALL	__ltof
+	LD	(IX+-125),BC
+	LD	(IX+-122),A
+;  452					step = floor(distance/6);
+	LD	HL,12582912
+	LD	E,64
+	CALL	__fdiv
+	LD	DE,BC
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	PUSH	DE
+	CALL	_floor
+	POP	BC
+	POP	BC
+	LD	A,E
 	LD	BC,HL
-	LD	HL,24
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_287
+	CALL	__ftol
+	LD	(IX+-105),BC
+;  453	
+;  454					gfx_TransparentSprite_NoClip(heroRunLeft[ step % 3 ], hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-64)
+	LD	BC,3
+	LD	DE,(_hero)
+	PUSH	DE
+	LD	HL,(IX+-105)
+	CALL	__iremu
+	LD	BC,HL
+	ADD	HL,HL
+	ADD	HL,BC
+	LD	BC,HL
+	LD	HL,IX
+	LD	DE,-182
+	ADD	HL,DE
+	ADD	HL,BC
+	LD	BC,(HL)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  501					else if(hero.x - lastStill.x > 24) gfx_TransparentSprite_NoClip(HeroJumpRight2, hero.x, hero.y);
-	JR	L_338
-L_287:
-	LD	HL,(_hero)
-	LD	BC,(IX+-6)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,24
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	P,L_338
-	LD	A,(_hero+3)
-	LD	C,A
-	LD	B,0
-	PUSH	BC
-	LD	BC,(_hero)
-	PUSH	BC
-	LD	BC,(IX+-67)
-	PUSH	BC
-	CALL	_gfx_TransparentSprite_NoClip
-	POP	BC
-	POP	BC
-	POP	BC
-;  502	
-;  503					
-;  504				}
-;  505				//JUMPING LEFT ANIMATION
-;  506				else if(jumpingDir == left){
-	JR	L_338
-L_332:
-	LD	BC,1
-	LD	HL,(IX+-27)
-	OR	A,A
-	SBC	HL,BC
-	JR	NZ,L_330
-;  507					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+;  455				}
+;  456	
+;  457			}
+;  458			//IF NOTHING IS PRESSED
+;  459			else{
+	JR	L_407
+L_405:
+;  460	
+;  461				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
@@ -3074,48 +3096,661 @@ L_332:
 	POP	BC
 	POP	BC
 	POP	BC
-;  508	
-;  509					if(lastStill.x - hero.x <= 50 && !isTouching(leftSide, false, 0, -1)) hero.x -= 2;
-	LD	HL,(IX+-6)
+;  462	
+;  463	
+;  464				//IF IS IN AIR
+;  465				if(!tempBool2 && !inLadder && !ascending){
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	NZ,L_286
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	NZ,L_286
+	LD	A,(IX+-26)
+	OR	A,A
+	JR	NZ,L_286
+;  466	
+;  467						if(!tempBool1)	hero.y += velocity;
+	LD	A,(IX+-60)
+	OR	A,A
+	JR	NZ,L_273
+	LD	BC,(IX+-41)
+	LD	HL,(_hero+3)
+	ADD	HL,BC
+	LD	(_hero+3),HL
+;  468						else if(!tempBool2 && tempBool1) hero.y++;
+	JR	L_276
+L_273:
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	NZ,L_276
+	LD	A,(IX+-60)
+	OR	A,A
+	JR	Z,L_276
+	LD	BC,(_hero+3)
+	INC	BC
+	LD	(_hero+3),BC
+L_276:
+;  469	
+;  470						if(isTouching(rightSide, false, 0, 0, hero.x , hero.y)) hero.x--;
+	LD	BC,(_hero+3)
+	PUSH	BC
 	LD	BC,(_hero)
-	OR	A,A
-	SBC	HL,BC
-	LD	BC,HL
-	LD	HL,50
-	OR	A,A
-	SBC	HL,BC
-	CALL	__setflag
-	JP	M,L_296
-	LD	BC,16777215
 	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
 	PUSH	BC
+	LD	BC,1
+	PUSH	BC
 	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_279
+	LD	BC,(_hero)
+	DEC	BC
+	LD	(_hero),BC
+L_279:
+;  471						if(isTouching(leftSide, false, 0, 0, hero.x , hero.y)) hero.x++;
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	PUSH	BC
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_280
+	LD	BC,(_hero)
+	INC	BC
+	LD	(_hero),BC
+L_280:
+;  472						gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  473				}
+;  474				else if(tempBool2 && !inLadder && !ascending){
+	JR	L_299
+L_286:
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	Z,L_299
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	NZ,L_299
+	LD	A,(IX+-26)
+	OR	A,A
+	JR	NZ,L_299
+;  475					jumpingDir = nothing;
+	LD	BC,8
+	LD	(IX+-30),BC
+;  476					doubleJumped = false;
+	LD	(IX+-45),0
+;  477					keyIsReleased = false;
+	LD	(IX+-38),0
+;  478					if(isTouching(bottomFeet, true, 0, 0, hero.x , hero.y)) {
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	LD	BC,3
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_299
+;  479						isBoosted = true;
+	LD	(IX+-27),1
+;  480						ascending = true;
+	LD	(IX+-26),1
+;  481						jumpingDir = nothing;
+	LD	BC,8
+	LD	(IX+-30),BC
+;  482						lastStill.x = hero.x;
+	LD	BC,(_hero)
+	LD	(IX+-12),BC
+;  483						lastStill.y = hero.y;
+	LD	BC,(_hero+3)
+	LD	(IX+-9),BC
+;  484						doubleJumped = false;
+	LD	(IX+-45),0
+;  485					}	
+;  486				}
+L_299:
+;  487	
+;  488				//IF ASCENDING
+;  489				if(ascending){
+	LD	A,(IX+-26)
+	OR	A,A
+	JR	Z,L_314
+;  490					inLadder = false;
+	LD	(IX+-19),0
+;  491					if(!isBoosted) velocity = -2;
+	LD	A,(IX+-27)
+	OR	A,A
+	JR	NZ,L_288
+	LD	BC,16777214
+	LD	(IX+-41),BC
+;  492					else velocity = -10;
+	JR	L_290
+L_288:
+	LD	BC,16777206
+	LD	(IX+-41),BC
+L_290:
+;  493	
+;  494					if(!isTouching(topHead, false, velocity + 1, 0, hero.x , hero.y)) hero.y += velocity;
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	LD	BC,(IX+-41)
+	INC	BC
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	LD	BC,2
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
 	POP	BC
 	POP	BC
 	POP	BC
 	POP	BC
 	OR	A,A
 	JR	NZ,L_296
-	LD	IY,(_hero)
-	LEA	BC,IY+-2
-	LD	(_hero),BC
-;  510					else if(lastStill.x - hero.x > 50 && lastStill.x - hero.x <= 65 && !isTouching(leftSide, false, 0, 0)) hero.x--;
-	JR	L_298
+	LD	BC,(IX+-41)
+	LD	HL,(_hero+3)
+	ADD	HL,BC
+	LD	(_hero+3),HL
 L_296:
+;  495					if(((lastStill.y - hero.y > 25 && !isBoosted) || (lastStill.y - hero.y > 160 && isBoosted)) || isTouching(topHead, false, velocity + 1, 0, hero.x , hero.y)) {
+	LD	BC,(_hero+3)
+	LD	HL,(IX+-9)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,25
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L_293
+	LD	A,(IX+-27)
+	OR	A,A
+	JR	Z,L_295
+L_293:
+	LD	BC,(_hero+3)
+	LD	HL,(IX+-9)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,160
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L_294
+	LD	A,(IX+-27)
+	OR	A,A
+	JR	NZ,L_295
+L_294:
+	LD	BC,(_hero+3)
+	PUSH	BC
 	LD	BC,(_hero)
-	LD	HL,(IX+-6)
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	LD	BC,(IX+-41)
+	INC	BC
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	LD	BC,2
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_297
+L_295:
+;  496						ascending = false;
+	LD	(IX+-26),0
+;  497						isBoosted = false;
+	LD	(IX+-27),0
+;  498						lastStill.x = hero.x;
+	LD	BC,(_hero)
+	LD	(IX+-12),BC
+;  499						lastStill.y = hero.y;
+	LD	BC,(_hero+3)
+	LD	(IX+-9),BC
+;  500					}
+L_297:
+;  501					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  502				}
+L_314:
+;  503	
+;  504				//MOVING LADDER
+;  505				if(inLadder && (upKeyNotAlpha) && !(leftKey || secondKey) && !(rightKey || modeKey)){
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	Z,L_313
+	LD	A,(IX+-56)
+	OR	A,A
+	JR	Z,L_313
+	LD	A,(IX+-47)
+	OR	A,A
+	JR	NZ,L_313
+	LD	A,(IX+-53)
+	OR	A,A
+	JR	NZ,L_313
+	LD	A,(IX+-48)
+	OR	A,A
+	JR	NZ,L_313
+	LD	A,(IX+-52)
+	OR	A,A
+	JR	NZ,L_313
+;  506					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_Sprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  507					hero.y -= 2;
+	LD	IY,(_hero+3)
+	LEA	BC,IY+-2
+	LD	(_hero+3),BC
+;  508					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  509				}
+;  510				else if(inLadder && downKeyNotAlpha){
+	JR	L_319
+L_313:
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	Z,L_319
+	LD	A,(IX+-115)
+	OR	A,A
+	JR	Z,L_319
+;  511					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_Sprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  512					if(hero.y != 140 && mapNum == 1 || mapNum != 1 && hero.y != 200) hero.y += 2;
+	LD	BC,140
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_308
+	LD	BC,1
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_309
+L_308:
+	LD	BC,1
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_310
+	LD	BC,200
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_310
+L_309:
+	LD	IY,(_hero+3)
+	LEA	BC,IY+2
+	LD	(_hero+3),BC
+L_310:
+;  513					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  514				}
+L_319:
+;  515	
+;  516				if(!(upKey) && !keyIsReleased  && !doubleJumped && jumpingDir != nothing) keyIsReleased = true;
+	LD	A,(IX+-91)
+	OR	A,A
+	JR	NZ,L_328
+	LD	A,(IX+-38)
+	OR	A,A
+	JR	NZ,L_328
+	LD	A,(IX+-45)
+	OR	A,A
+	JR	NZ,L_328
+	LD	BC,8
+	LD	HL,(IX+-30)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_328
+	LD	(IX+-38),1
+L_328:
+;  517	
+;  518				
+;  519				//CHECK FOR JUMPING UP
+;  520				if(upKeyNotAlpha && !doubleJumped && !inLadder && ((keyIsReleased && jumpingDir != nothing) || (!keyIsReleased && jumpingDir == nothing))) {
+	LD	A,(IX+-56)
+	OR	A,A
+	JR	Z,L_403
+	LD	A,(IX+-45)
+	OR	A,A
+	JR	NZ,L_403
+	LD	A,(IX+-19)
+	OR	A,A
+	JR	NZ,L_403
+	LD	A,(IX+-38)
+	OR	A,A
+	JR	Z,L_324
+	LD	BC,8
+	LD	HL,(IX+-30)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_327
+L_324:
+	LD	A,(IX+-38)
+	OR	A,A
+	JR	NZ,L_403
+	LD	BC,8
+	LD	HL,(IX+-30)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_403
+L_327:
+;  521					jumpingDir = up;
+	LD	BC,2
+	LD	(IX+-30),BC
+;  522					isBoosted = false;
+	LD	(IX+-27),0
+;  523					ascending = true;
+	LD	(IX+-26),1
+;  524	
+;  525					lastStill.x = hero.x;
+	LD	BC,(_hero)
+	LD	(IX+-12),BC
+;  526					lastStill.y = hero.y;
+	LD	BC,(_hero+3)
+	LD	(IX+-9),BC
+;  527	
+;  528					keyIsReleased = false;
+	LD	(IX+-38),0
+;  529	
+;  530					if(!tempBool2) doubleJumped = true;
+	LD	A,(IX+-31)
+	OR	A,A
+	JR	NZ,L_403
+	LD	(IX+-45),1
+;  531					
+;  532				}
+L_403:
+;  533				//STANDING STILL ANIMATION
+;  534				if(jumpingDir == nothing && !isBoosted){
+	LD	BC,8
+	LD	HL,(IX+-30)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L__216
+	LD	A,1
+	JR	L__217
+L__216:
+	XOR	A,A
+L__217:
+	LD	(IX+-97),A
+	OR	A,A
+	JR	NZ,L_402
+	LD	A,(IX+-27)
+	OR	A,A
+	JR	NZ,L_402
+;  535	
+;  536					inLadder = false;
+	LD	(IX+-19),0
+;  537					if((hero.x >= 106 && hero.x <= 136 && hero.y >= 39 && hero.y <= 140 && mapNum == 1) || (hero.x >= 271 && mapNum == 2 && hero.y >= 120) && jumpingDir == nothing) inLadder = true;
+	LD	HL,(_hero)
+	LD	BC,106
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L_337
+	LD	BC,(_hero)
+	LD	HL,136
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_337
+	LD	BC,39
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_337
+	LD	BC,(_hero+3)
+	LD	HL,140
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_337
+	LD	BC,1
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_338
+L_337:
+	LD	BC,271
+	LD	HL,(_hero)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_340
+	LD	BC,2
+	LD	HL,(IX+-15)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_340
+	LD	BC,120
+	LD	HL,(_hero+3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_340
+	LD	A,(IX+-97)
+	OR	A,A
+	JR	NZ,L_340
+L_338:
+	LD	(IX+-19),1
+L_340:
+;  538	
+;  539					if(isTouching(bottomFeet, true, 0, 0, hero.x , hero.y)) {
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	LD	BC,3
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	Z,L_341
+;  540						isBoosted = true;
+	LD	(IX+-27),1
+;  541						ascending = true;
+	LD	(IX+-26),1
+;  542						lastStill.x = hero.x;
+	LD	BC,(_hero)
+	LD	(IX+-12),BC
+;  543						lastStill.y = hero.y;
+	LD	BC,(_hero+3)
+	LD	(IX+-9),BC
+;  544					}
+L_341:
+;  545	
+;  546					gfx_TransparentSprite_NoClip(HeroStill, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-51)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  547				}
+;  548	
+;  549				//JUMPING RIGHT ANIMATION
+;  550				else if(jumpingDir == right){
+	JR	L_407
+L_402:
+	LD	HL,(IX+-30)
+	CALL	__icmpzero
+	JR	NZ,L_400
+;  551					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_Sprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  552	
+;  553					if(hero.x - lastStill.x <= 50 && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) hero.x += 2;
+	LD	BC,(IX+-12)
+	LD	HL,(_hero)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
 	LD	HL,50
 	OR	A,A
 	SBC	HL,BC
-	JP	P,L_298
+	JP	M,L_348
+	LD	BC,(_hero+3)
+	PUSH	BC
 	LD	BC,(_hero)
-	LD	HL,(IX+-6)
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	NZ,L_348
+	LD	IY,(_hero)
+	LEA	BC,IY+2
+	LD	(_hero),BC
+;  554					else if(hero.x - lastStill.x > 50 && hero.x - lastStill.x <= 65 && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) hero.x++;
+	JR	L_350
+L_348:
+	LD	HL,(_hero)
+	LD	BC,(IX+-12)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,50
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L_350
+	LD	HL,(_hero)
+	LD	BC,(IX+-12)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
@@ -3123,7 +3758,221 @@ L_296:
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	M,L_298
+	JP	M,L_350
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	NZ,L_350
+	LD	BC,(_hero)
+	INC	BC
+	LD	(_hero),BC
+L_350:
+;  555	
+;  556					if(hero.x > 300) hero.x = 300;
+	LD	BC,(_hero)
+	LD	HL,300
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L_351
+	LD	BC,300
+	LD	(_hero),BC
+L_351:
+;  557	
+;  558					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_GetSprite
+	POP	BC
+	POP	BC
+	POP	BC
+;  559	
+;  560					if(hero.x - lastStill.x <= 12) gfx_TransparentSprite_NoClip(HeroJumpRight0, hero.x, hero.y);
+	LD	BC,(IX+-12)
+	LD	HL,(_hero)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,12
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_357
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-81)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  561					else if(hero.x - lastStill.x > 12 && hero.x - lastStill.x <= 24) gfx_TransparentSprite_NoClip(HeroJumpRight1, hero.x, hero.y);
+	JR	L_407
+L_357:
+	LD	HL,(_hero)
+	LD	BC,(IX+-12)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,12
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	P,L_355
+	LD	HL,(_hero)
+	LD	BC,(IX+-12)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,24
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_355
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-87)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  562					else if(hero.x - lastStill.x > 24) gfx_TransparentSprite_NoClip(HeroJumpRight2, hero.x, hero.y);
+	JR	L_407
+L_355:
+	LD	HL,(_hero)
+	LD	BC,(IX+-12)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,24
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	P,L_407
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-90)
+	PUSH	BC
+	CALL	_gfx_TransparentSprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  563	
+;  564					
+;  565				}
+;  566				//JUMPING LEFT ANIMATION
+;  567				else if(jumpingDir == left){
+	JR	L_407
+L_400:
+	LD	BC,1
+	LD	HL,(IX+-30)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_398
+;  568					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	LD	A,(_hero+3)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,(IX+-18)
+	PUSH	BC
+	CALL	_gfx_Sprite_NoClip
+	POP	BC
+	POP	BC
+	POP	BC
+;  569	
+;  570					if(lastStill.x - hero.x <= 50 && !isTouching(leftSide, false, 0, -1, hero.x , hero.y)) hero.x -= 2;
+	LD	HL,(IX+-12)
+	LD	BC,(_hero)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,50
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_364
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
+	LD	BC,16777215
+	PUSH	BC
+	LD	BC,0
+	PUSH	BC
+	PUSH	BC
+	PUSH	BC
+	CALL	_isTouching
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+	OR	A,A
+	JR	NZ,L_364
+	LD	IY,(_hero)
+	LEA	BC,IY+-2
+	LD	(_hero),BC
+;  571					else if(lastStill.x - hero.x > 50 && lastStill.x - hero.x <= 65 && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) hero.x--;
+	JR	L_366
+L_364:
+	LD	BC,(_hero)
+	LD	HL,(IX+-12)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,50
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L_366
+	LD	BC,(_hero)
+	LD	HL,(IX+-12)
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,HL
+	LD	HL,65
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_366
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
@@ -3134,22 +3983,24 @@ L_296:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_298
+	JR	NZ,L_366
 	LD	BC,(_hero)
 	DEC	BC
 	LD	(_hero),BC
-L_298:
-;  511	
-;  512					if(hero.x < 0) hero.x = 0;
+L_366:
+;  572	
+;  573					if(hero.x < 0) hero.x = 0;
 	LD	HL,(_hero)
 	CALL	__icmpzero
-	JP	P,L_299
+	JP	P,L_367
 	LD	BC,0
 	LD	(_hero),BC
-L_299:
-;  513	
-;  514					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+L_367:
+;  574	
+;  575					gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	LD	BC,(_hero+3)
 	PUSH	BC
 	LD	BC,(_hero)
@@ -3160,9 +4011,9 @@ L_299:
 	POP	BC
 	POP	BC
 	POP	BC
-;  515	
-;  516					if(lastStill.x - hero.x <= 12) gfx_TransparentSprite_NoClip(HeroJumpLeft0, hero.x, hero.y);
-	LD	HL,(IX+-6)
+;  576	
+;  577					if(lastStill.x - hero.x <= 12) gfx_TransparentSprite_NoClip(HeroJumpLeft0, hero.x, hero.y);
+	LD	HL,(IX+-12)
 	LD	BC,(_hero)
 	OR	A,A
 	SBC	HL,BC
@@ -3171,24 +4022,24 @@ L_299:
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	M,L_305
+	JP	M,L_373
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-104)
+	LD	BC,(IX+-128)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  517					else if(lastStill.x - hero.x > 12 && lastStill.x - hero.x <= 24) gfx_TransparentSprite_NoClip(HeroJumpLeft1, hero.x, hero.y);
-	JR	L_338
-L_305:
+;  578					else if(lastStill.x - hero.x > 12 && lastStill.x - hero.x <= 24) gfx_TransparentSprite_NoClip(HeroJumpLeft1, hero.x, hero.y);
+	JR	L_407
+L_373:
 	LD	BC,(_hero)
-	LD	HL,(IX+-6)
+	LD	HL,(IX+-12)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
@@ -3196,9 +4047,9 @@ L_305:
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	P,L_303
+	JP	P,L_371
 	LD	BC,(_hero)
-	LD	HL,(IX+-6)
+	LD	HL,(IX+-12)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
@@ -3206,24 +4057,25 @@ L_305:
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	M,L_303
+	JP	M,L_371
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-107)
+	LEA	IY,IX+-128
+	LD	BC,(IY+-3)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  518					else if(lastStill.x - hero.x > 24) gfx_TransparentSprite_NoClip(HeroJumpLeft2, hero.x, hero.y);
-	JR	L_338
-L_303:
+;  579					else if(lastStill.x - hero.x > 24) gfx_TransparentSprite_NoClip(HeroJumpLeft2, hero.x, hero.y);
+	JR	L_407
+L_371:
 	LD	BC,(_hero)
-	LD	HL,(IX+-6)
+	LD	HL,(IX+-12)
 	OR	A,A
 	SBC	HL,BC
 	LD	BC,HL
@@ -3231,30 +4083,31 @@ L_303:
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	P,L_338
+	JP	P,L_407
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-110)
+	LEA	IY,IX+-128
+	LD	BC,(IY+-36)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  519				}
-;  520				//JUMPING UP ANIMATION
-;  521				else if(jumpingDir == up){
-	JR	L_338
-L_330:
+;  580				}
+;  581				//JUMPING UP ANIMATION
+;  582				else if(jumpingDir == up){
+	JR	L_407
+L_398:
 	LD	BC,2
-	LD	HL,(IX+-27)
+	LD	HL,(IX+-30)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_328
-;  522					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	JR	NZ,L_396
+;  583					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
@@ -3267,11 +4120,15 @@ L_330:
 	POP	BC
 	POP	BC
 	POP	BC
-;  523	
-;  524					if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0)) {
-	LD	A,(IX+-53)
+;  584	
+;  585					if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
+	LD	A,(IX+-55)
 	OR	A,A
-	JR	Z,L_312
+	JR	Z,L_380
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
@@ -3282,20 +4139,26 @@ L_330:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_312
-;  525						hero.x--;
+	JR	NZ,L_380
+;  586						hero.x--;
 	LD	BC,(_hero)
 	DEC	BC
 	LD	(_hero),BC
-;  526						facingRight = false;
-	LD	(IX+-38),0
-;  527					}
-L_312:
-;  528					if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0)) {
-	LD	A,(IX+-57)
+;  587						facingRight = false;
+	LD	(IX+-36),0
+;  588					}
+L_380:
+;  589					if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
+	LD	A,(IX+-54)
 	OR	A,A
-	JR	Z,L_313
+	JR	Z,L_381
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
@@ -3307,18 +4170,20 @@ L_312:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_313
-;  529						hero.x++;
+	JR	NZ,L_381
+;  590						hero.x++;
 	LD	BC,(_hero)
 	INC	BC
 	LD	(_hero),BC
-;  530						facingRight = true;
-	LD	(IX+-38),1
-;  531					}
-L_313:
-;  532	
-;  533					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+;  591						facingRight = true;
+	LD	(IX+-36),1
+;  592					}
+L_381:
+;  593	
+;  594					gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	LD	BC,(_hero+3)
 	PUSH	BC
 	LD	BC,(_hero)
@@ -3329,47 +4194,47 @@ L_313:
 	POP	BC
 	POP	BC
 	POP	BC
-;  534					
-;  535					if(facingRight) gfx_TransparentSprite_NoClip(HeroJumpUpRight, hero.x, hero.y);
-	LD	A,(IX+-38)
+;  595					
+;  596					if(facingRight) gfx_TransparentSprite_NoClip(HeroJumpUpRight, hero.x, hero.y);
+	LD	A,(IX+-36)
 	OR	A,A
-	JR	Z,L_315
+	JR	Z,L_383
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-70)
+	LD	BC,(IX+-95)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  536					else gfx_TransparentSprite_NoClip(HeroJumpUpLeft, hero.x, hero.y);
-	JR	L_338
-L_315:
+;  597					else gfx_TransparentSprite_NoClip(HeroJumpUpLeft, hero.x, hero.y);
+	JR	L_407
+L_383:
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-74)
+	LD	BC,(IX+-102)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  537					
-;  538				}
-;  539				else if(isBoosted){
-	JR	L_338
-L_328:
-	LD	A,(IX+-24)
+;  598					
+;  599				}
+;  600				else if(isBoosted){
+	JR	L_407
+L_396:
+	LD	A,(IX+-27)
 	OR	A,A
-	JR	Z,L_338
-;  540					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
+	JR	Z,L_407
+;  601					gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
@@ -3382,11 +4247,15 @@ L_328:
 	POP	BC
 	POP	BC
 	POP	BC
-;  541	
-;  542					if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0)) {
-	LD	A,(IX+-53)
+;  602	
+;  603					if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
+	LD	A,(IX+-55)
 	OR	A,A
-	JR	Z,L_322
+	JR	Z,L_390
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
@@ -3397,20 +4266,26 @@ L_328:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_322
-;  543						hero.x--;
+	JR	NZ,L_390
+;  604						hero.x--;
 	LD	BC,(_hero)
 	DEC	BC
 	LD	(_hero),BC
-;  544						facingRight = false;
-	LD	(IX+-38),0
-;  545					}
-L_322:
-;  546					if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0)) {
-	LD	A,(IX+-57)
+;  605						facingRight = false;
+	LD	(IX+-36),0
+;  606					}
+L_390:
+;  607					if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
+	LD	A,(IX+-54)
 	OR	A,A
-	JR	Z,L_323
+	JR	Z,L_391
+	LD	BC,(_hero+3)
+	PUSH	BC
+	LD	BC,(_hero)
+	PUSH	BC
 	LD	BC,0
 	PUSH	BC
 	PUSH	BC
@@ -3422,18 +4297,20 @@ L_322:
 	POP	BC
 	POP	BC
 	POP	BC
+	POP	BC
+	POP	BC
 	OR	A,A
-	JR	NZ,L_323
-;  547						hero.x++;
+	JR	NZ,L_391
+;  608						hero.x++;
 	LD	BC,(_hero)
 	INC	BC
 	LD	(_hero),BC
-;  548						facingRight = true;
-	LD	(IX+-38),1
-;  549					}
-L_323:
-;  550	
-;  551					gfx_GetSprite(behind_sprite, hero.x, hero.y);
+;  609						facingRight = true;
+	LD	(IX+-36),1
+;  610					}
+L_391:
+;  611	
+;  612					gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	LD	BC,(_hero+3)
 	PUSH	BC
 	LD	BC,(_hero)
@@ -3444,51 +4321,56 @@ L_323:
 	POP	BC
 	POP	BC
 	POP	BC
-;  552					
-;  553					if(facingRight) gfx_TransparentSprite_NoClip(HeroJumpUpRight, hero.x, hero.y);
-	LD	A,(IX+-38)
+;  613					
+;  614					if(facingRight) gfx_TransparentSprite_NoClip(HeroJumpUpRight, hero.x, hero.y);
+	LD	A,(IX+-36)
 	OR	A,A
-	JR	Z,L_325
+	JR	Z,L_393
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-70)
+	LD	BC,(IX+-95)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  554					else gfx_TransparentSprite_NoClip(HeroJumpUpLeft, hero.x, hero.y);
-	JR	L_338
-L_325:
+;  615					else gfx_TransparentSprite_NoClip(HeroJumpUpLeft, hero.x, hero.y);
+	JR	L_407
+L_393:
 	LD	A,(_hero+3)
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(_hero)
 	PUSH	BC
-	LD	BC,(IX+-74)
+	LD	BC,(IX+-102)
 	PUSH	BC
 	CALL	_gfx_TransparentSprite_NoClip
 	POP	BC
 	POP	BC
 	POP	BC
-;  555					
-;  556				}
-;  557			}
-;  558	
-;  559		}
-L_338:
+;  616					
+;  617				}
+;  618			}
+L_407:
+;  619			gfx_BlitBuffer();
+	LD	BC,1
+	PUSH	BC
+	CALL	_gfx_Blit
+	POP	BC
+;  620		}
+L_408:
 	LD	A,(16056348)
 	AND	A,64
-	JR	Z,L_339
-;  560	
-;  561		gfx_End();
+	JR	Z,L_409
+;  621	
+;  622		gfx_End();
 	CALL	_gfx_End
-;  562	}
+;  623	}
 	LD	SP,IX
 	POP	IX
 	RET	
@@ -3497,13 +4379,18 @@ L_338:
 ;**************************** _main ***************************
 ;Name                         Addr/Register   Size   Type
 ;_gfx_End                            IMPORT  -----   function
+;_gfx_Blit                           IMPORT  -----   function
 ;_isTouching                         IMPORT  -----   function
 ;_gfx_GetPixel                       IMPORT  -----   function
 ;_floor                              IMPORT  -----   function
+;_gfx_TransparentSprite              IMPORT  -----   function
+;_gfx_Sprite                         IMPORT  -----   function
 ;_gfx_Sprite_NoClip                  IMPORT  -----   function
 ;_gfx_TransparentSprite_NoClip       IMPORT  -----   function
 ;_gfx_GetSprite                      IMPORT  -----   function
-;_gfx_Blit                           IMPORT  -----   function
+;_boundaries                         STATIC   4800   variable
+;_establishBoundaries                IMPORT  -----   function
+;_gfx_SwapDraw                       IMPORT  -----   function
 ;_gfx_SetTransparentColor            IMPORT  -----   function
 ;_gfx_SetDraw                        IMPORT  -----   function
 ;_gfx_ScaledSprite_NoClip            IMPORT  -----   function
@@ -3517,7 +4404,7 @@ L_338:
 ;_gfx_SetColor                       IMPORT  -----   function
 ;_kb_Scan                            IMPORT  -----   function
 ;_gfx_FillScreen                     IMPORT  -----   function
-;_global_palette                     IMPORT    116   variable
+;_global_palette                     IMPORT    128   variable
 ;_gfx_SetPalette                     IMPORT  -----   function
 ;_gfx_Begin                          IMPORT  -----   function
 ;_srand                              IMPORT  -----   function
@@ -3535,72 +4422,85 @@ L_338:
 ;_zx7_Decompress                     IMPORT  -----   function
 ;_malloc                             IMPORT  -----   function
 ;_gfx_AllocSprite                    IMPORT  -----   function
-;heroJumpRight                       IX-171      9   variable
-;heroRunRight                        IX-162      9   variable
-;heroRunLeft                         IX-153      9   variable
-;distance                            IX-144      4   variable
-;temp111                             IX-140      3   variable
-;temp104                             IX-137      3   variable
-;temp100                             IX-134      3   variable
-;temp93                              IX-131      3   variable
-;temp89                              IX-128      3   variable
-;temp82                              IX-125      3   variable
-;temp76                              IX-122      3   variable
-;temp69                              IX-119      3   variable
-;HeroLeft2                           IX-116      3   variable
-;arrowSpr                            IX-113      3   variable
-;HeroJumpLeft2                       IX-110      3   variable
-;HeroJumpLeft1                       IX-107      3   variable
-;HeroJumpLeft0                       IX-104      3   variable
-;HeroLeft1                           IX-101      3   variable
-;HeroLeft0                            IX-98      3   variable
-;arrowDistance                        IX-95      4   variable
-;HeroRight2                           IX-91      3   variable
-;prevkey                              IX-88      1   variable
-;HeroRight1                           IX-87      3   variable
-;downKeyNotAlpha                      IX-84      1   variable
-;HeroRight0                           IX-83      3   variable
-;step                                 IX-80      3   variable
-;HeroStill                            IX-77      3   variable
-;HeroJumpUpLeft                       IX-74      3   variable
-;G_0                                  IX-71      1   variable
-;HeroJumpUpRight                      IX-70      3   variable
-;HeroJumpRight2                       IX-67      3   variable
-;HeroJumpRight1                       IX-64      3   variable
-;HeroJumpRight0                       IX-61      3   variable
-;key                                  IX-58      1   variable
-;rightKeyNotAlpha                     IX-57      1   variable
-;behindArrow                          IX-56      3   variable
-;leftKeyNotAlpha                      IX-53      1   variable
-;downKey                              IX-52      1   variable
-;upKeyNotAlpha                        IX-51      1   variable
-;secondKey                            IX-50      1   variable
-;modeKey                              IX-49      1   variable
-;tempBool1                            IX-48      1   variable
-;map                                  IX-47      3   variable
-;upKey                                IX-44      1   variable
-;alphaKey                             IX-43      1   variable
-;velocity                             IX-42      3   variable
-;doubleJumped                         IX-39      1   variable
-;facingRight                          IX-38      1   variable
-;rightKey                             IX-37      1   variable
-;leftKey                              IX-36      1   variable
-;keyIsReleased                        IX-35      1   variable
-;arrowInit                            IX-34      6   variable
-;tempBool2                            IX-28      1   variable
-;jumpingDir                           IX-27      3   variable
-;isBoosted                            IX-24      1   variable
-;ascending                            IX-23      1   variable
+;heroJumpRight                       IX-200      9   variable
+;heroRunRight                        IX-191      9   variable
+;heroRunLeft                         IX-182      9   variable
+;arrowSprTiltRight                   IX-173      3   variable
+;arrowSprTiltLeft                    IX-170      3   variable
+;HeroLeft2                           IX-167      3   variable
+;HeroJumpLeft2                       IX-164      3   variable
+;temp176                             IX-161      3   variable
+;temp167                             IX-158      3   variable
+;temp163                             IX-155      3   variable
+;temp154                             IX-152      3   variable
+;temp150                             IX-149      3   variable
+;temp141                             IX-146      3   variable
+;temp135                             IX-143      3   variable
+;temp126                             IX-140      3   variable
+;temp117                             IX-137      3   variable
+;temp79                              IX-134      3   variable
+;HeroJumpLeft1                       IX-131      3   variable
+;HeroJumpLeft0                       IX-128      3   variable
+;distance                            IX-125      4   variable
+;HeroLeft1                           IX-121      3   variable
+;HeroLeft0                           IX-118      3   variable
+;downKeyNotAlpha                     IX-115      1   variable
+;HeroRight0                          IX-114      3   variable
+;HeroRight2                          IX-111      3   variable
+;HeroRight1                          IX-108      3   variable
+;step                                IX-105      3   variable
+;HeroJumpUpLeft                      IX-102      3   variable
+;downKey                              IX-99      1   variable
+;prevkey                              IX-98      1   variable
+;G_1                                  IX-97      1   variable
+;G_0                                  IX-96      1   variable
+;HeroJumpUpRight                      IX-95      3   variable
+;key                                  IX-92      1   variable
+;upKey                                IX-91      1   variable
+;HeroJumpRight2                       IX-90      3   variable
+;HeroJumpRight1                       IX-87      3   variable
+;arrowSprLeft                         IX-84      3   variable
+;HeroJumpRight0                       IX-81      3   variable
+;arrowInit                            IX-78      6   variable
+;arrowSpr                             IX-72      3   variable
+;arrowTouchingTip                     IX-69      1   variable
+;arrowTouchingBottom                  IX-68      1   variable
+;arrowDistance                        IX-67      4   variable
+;x                                    IX-63      3   variable
+;tempBool1                            IX-60      1   variable
+;y                                    IX-59      3   variable
+;upKeyNotAlpha                        IX-56      1   variable
+;leftKeyNotAlpha                      IX-55      1   variable
+;rightKeyNotAlpha                     IX-54      1   variable
+;secondKey                            IX-53      1   variable
+;modeKey                              IX-52      1   variable
+;HeroStill                            IX-51      3   variable
+;rightKey                             IX-48      1   variable
+;leftKey                              IX-47      1   variable
+;alphaKey                             IX-46      1   variable
+;doubleJumped                         IX-45      1   variable
+;behindArrow                          IX-44      3   variable
+;velocity                             IX-41      3   variable
+;keyIsReleased                        IX-38      1   variable
+;standing                             IX-37      1   variable
+;facingRight                          IX-36      1   variable
+;map                                  IX-35      3   variable
+;alphaReleased                        IX-32      1   variable
+;tempBool2                            IX-31      1   variable
+;jumpingDir                           IX-30      3   variable
+;isBoosted                            IX-27      1   variable
+;ascending                            IX-26      1   variable
+;i                                    IX-25      3   variable
 ;shootingDir                          IX-22      3   variable
 ;inLadder                             IX-19      1   variable
 ;behind_sprite                        IX-18      3   variable
 ;mapNum                               IX-15      3   variable
-;arrow                                IX-12      6   variable
-;lastStill                             IX-6      6   variable
+;lastStill                            IX-12      6   variable
+;arrow                                 IX-6      6   variable
 
 
-; Stack Frame Size: 191 (bytes)
-;       Spill Code: -9 (instruction)
+; Stack Frame Size: 227 (bytes)
+;       Spill Code: -16 (instruction)
 
 
 	SEGMENT STRSECT
@@ -3620,35 +4520,35 @@ L__10:
 	DB	"Map5"
 	DB	0
 	SEGMENT CODE
-;  563	
-;  564	bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity){
+;  624	
+;  625	bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity, int x, int y){
 _isTouching:
 	LD	HL,-5
 	CALL	__frameset
-;  565		int f;
-;  566	
-;  567		bool check;
-;  568		check = true;
+;  626		int f;
+;  627	
+;  628		bool check;
+;  629		check = true;
 	LD	(IX+-5),1
-;  569		if(part == leftSide){
+;  630		if(part == leftSide){
 	LD	HL,(IX+6)
 	CALL	__icmpzero
-	JR	NZ,L_380
-;  570			for(f = 3; f <= 40; f += 3) {
+	JR	NZ,L_450
+;  631			for(f = 3; f <= 40; f += 3) {
 	LD	BC,3
 	LD	(IX+-3),BC
-	JR	L_346
-L_344:
-;  571				if(gfx_GetPixel(hero.x + 2 + xVelocity, hero.y + f + yVelocity) == 0 || hero.x + xVelocity == 0) return true;
-	LD	A,(_hero+3)
+	JR	L_416
+L_414:
+;  632				if(gfx_GetPixel(x + 2 + xVelocity, y + f + yVelocity) == 0 || x + xVelocity == 0) return true;
 	LD	B,(IX+-3)
+	LD	A,(IX+21)
 	ADD	A,B
 	LD	B,(IX+12)
 	ADD	A,B
 	LD	C,A
 	LD	B,0
 	PUSH	BC
-	LD	IY,(_hero)
+	LD	IY,(IX+18)
 	LEA	HL,IY+2
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3657,50 +4557,50 @@ L_344:
 	POP	BC
 	POP	BC
 	OR	A,A
-	JR	Z,L_343
+	JR	Z,L_413
 	LD	BC,(IX+15)
-	LD	HL,(_hero)
+	LD	HL,(IX+18)
 	ADD	HL,BC
 	CALL	__icmpzero
-	JR	NZ,L_345
-L_343:
+	JR	NZ,L_415
+L_413:
 	LD	A,1
-	JR	L_382
-;  572			}
-L_345:
+	JR	L_452
+;  633			}
+L_415:
 	LD	IY,(IX+-3)
 	LEA	IY,IY+3
 	LD	(IX+-3),IY
-L_346:
+L_416:
 	LD	BC,(IX+-3)
 	LD	HL,40
 	OR	A,A
 	SBC	HL,BC
-	JP	P,L_344
-	JR	L_381
-;  573		}
-;  574		else if(part == rightSide){
-L_380:
+	JP	P,L_414
+	JR	L_451
+;  634		}
+;  635		else if(part == rightSide){
+L_450:
 	LD	BC,1
 	LD	HL,(IX+6)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_378
-;  575			for(f = 3; f <= 40; f += 3) {
+	JR	NZ,L_448
+;  636			for(f = 3; f <= 40; f += 3) {
 	LD	BC,3
 	LD	(IX+-3),BC
-	JR	L_351
-L_349:
-;  576				if(gfx_GetPixel(hero.x + 17 + xVelocity, hero.y + f + yVelocity) == 0 || hero.x + 20 + xVelocity== 320) return true;
-	LD	A,(_hero+3)
+	JR	L_421
+L_419:
+;  637				if(gfx_GetPixel(x + 17 + xVelocity, y + f + yVelocity) == 0 || x + 20 + xVelocity== 320) return true;
 	LD	B,(IX+-3)
+	LD	A,(IX+21)
 	ADD	A,B
 	LD	B,(IX+12)
 	ADD	A,B
 	LD	C,A
 	LD	B,0
 	PUSH	BC
-	LD	IY,(_hero)
+	LD	IY,(IX+18)
 	LEA	HL,IY+17
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3709,52 +4609,52 @@ L_349:
 	POP	BC
 	POP	BC
 	OR	A,A
-	JR	Z,L_348
-	LD	IY,(_hero)
+	JR	Z,L_418
+	LD	IY,(IX+18)
 	LEA	HL,IY+20
 	LD	BC,(IX+15)
 	ADD	HL,BC
 	OR	A,A
 	LD	BC,320
 	SBC	HL,BC
-	JR	NZ,L_350
-L_348:
+	JR	NZ,L_420
+L_418:
 	LD	A,1
-	JR	L_382
-;  577			}
-L_350:
+	JR	L_452
+;  638			}
+L_420:
 	LD	IY,(IX+-3)
 	LEA	IY,IY+3
 	LD	(IX+-3),IY
-L_351:
+L_421:
 	LD	BC,(IX+-3)
 	LD	HL,40
 	OR	A,A
 	SBC	HL,BC
-	JP	P,L_349
-	JR	L_381
-;  578		}
-;  579		else if(part == topHead){
-L_378:
+	JP	P,L_419
+	JR	L_451
+;  639		}
+;  640		else if(part == topHead){
+L_448:
 	LD	BC,2
 	LD	HL,(IX+6)
 	OR	A,A
 	SBC	HL,BC
-	JR	NZ,L_376
-;  580			for(f = 3; f <= 16; f += 3) {
+	JR	NZ,L_446
+;  641			for(f = 3; f <= 16; f += 3) {
 	LD	BC,3
 	LD	(IX+-3),BC
-	JR	L_356
-L_354:
-;  581				if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + yVelocity) == 0 || hero.y + yVelocity < 0) return true;
-	LD	A,(_hero+3)
+	JR	L_426
+L_424:
+;  642				if(gfx_GetPixel(x + f + xVelocity, y + yVelocity) == 0 || y + yVelocity < 0) return true;
 	LD	B,(IX+12)
+	LD	A,(IX+21)
 	ADD	A,B
 	LD	C,A
 	LD	B,0
 	PUSH	BC
 	LD	BC,(IX+-3)
-	LD	HL,(_hero)
+	LD	HL,(IX+18)
 	ADD	HL,BC
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3763,54 +4663,54 @@ L_354:
 	POP	BC
 	POP	BC
 	OR	A,A
-	JR	Z,L_353
+	JR	Z,L_423
 	LD	BC,(IX+12)
-	LD	HL,(_hero+3)
+	LD	HL,(IX+21)
 	ADD	HL,BC
 	CALL	__icmpzero
-	JP	P,L_355
-L_353:
+	JP	P,L_425
+L_423:
 	LD	A,1
-	JR	L_382
-;  582			}
-L_355:
+	JR	L_452
+;  643			}
+L_425:
 	LD	IY,(IX+-3)
 	LEA	IY,IY+3
 	LD	(IX+-3),IY
-L_356:
+L_426:
 	LD	BC,(IX+-3)
 	LD	HL,16
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	P,L_354
-	JR	L_381
-;  583		}
-;  584		else if(part == bottomFeet && !checkForPad){
-L_376:
+	JP	P,L_424
+	JR	L_451
+;  644		}
+;  645		else if(part == bottomFeet && !checkForPad){
+L_446:
 	LD	BC,3
 	LD	HL,(IX+6)
 	OR	A,A
 	SBC	HL,BC
-	JR	Z,L__231
+	JR	Z,L__279
 	LD	A,1
-	JR	L__232
-L__231:
+	JR	L__280
+L__279:
 	XOR	A,A
-L__232:
+L__280:
 	LD	(IX+-4),A
 	OR	A,A
-	JR	NZ,L_374
+	JR	NZ,L_444
 	LD	A,(IX+9)
 	OR	A,A
-	JR	NZ,L_374
-;  585			for(f = 6; f <= 14; f += 3) {
+	JR	NZ,L_444
+;  646			for(f = 6; f <= 14; f += 3) {
 	LD	BC,6
 	LD	(IX+-3),BC
-	JR	L_364
-L_362:
-;  586				if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 0 || hero.y + 41 + yVelocity > 240 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) return true;
-	LD	A,(_hero+3)
+	JR	L_434
+L_432:
+;  647				if(gfx_GetPixel(x + f + xVelocity, y + 40 + yVelocity) == 0 || y + 41 + yVelocity > 240 || gfx_GetPixel(x + f + xVelocity, y + 40 + yVelocity) == 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) return true;
+	LD	A,(IX+21)
 	ADD	A,40
 	LD	B,(IX+12)
 	ADD	A,B
@@ -3818,7 +4718,7 @@ L_362:
 	LD	B,0
 	PUSH	BC
 	LD	BC,(IX+-3)
-	LD	HL,(_hero)
+	LD	HL,(IX+18)
 	ADD	HL,BC
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3827,8 +4727,8 @@ L_362:
 	POP	BC
 	POP	BC
 	OR	A,A
-	JR	Z,L_361
-	LD	IY,(_hero+3)
+	JR	Z,L_431
+	LD	IY,(IX+21)
 	LEA	HL,IY+41
 	LD	BC,(IX+12)
 	ADD	HL,BC
@@ -3836,8 +4736,8 @@ L_362:
 	LD	HL,240
 	OR	A,A
 	SBC	HL,BC
-	JP	M,L_361
-	LD	A,(_hero+3)
+	JP	M,L_431
+	LD	A,(IX+21)
 	ADD	A,40
 	LD	B,(IX+12)
 	ADD	A,B
@@ -3845,7 +4745,7 @@ L_362:
 	LD	B,0
 	PUSH	BC
 	LD	BC,(IX+-3)
-	LD	HL,(_hero)
+	LD	HL,(IX+18)
 	ADD	HL,BC
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3858,7 +4758,7 @@ L_362:
 	OR	A,A
 	LD	BC,3
 	SBC	HL,BC
-	JR	Z,L_361
+	JR	Z,L_431
 	LD	A,(_hero+3)
 	ADD	A,40
 	LD	B,(IX+12)
@@ -3880,39 +4780,39 @@ L_362:
 	OR	A,A
 	LD	BC,4
 	SBC	HL,BC
-	JR	NZ,L_363
-L_361:
+	JR	NZ,L_433
+L_431:
 	LD	A,1
-	JR	L_382
-;  587			}
-L_363:
+	JR	L_452
+;  648			}
+L_433:
 	LD	IY,(IX+-3)
 	LEA	IY,IY+3
 	LD	(IX+-3),IY
-L_364:
+L_434:
 	LD	BC,(IX+-3)
 	LD	HL,14
 	OR	A,A
 	SBC	HL,BC
 	CALL	__setflag
-	JP	P,L_362
-	JR	L_381
-;  588		}
-;  589		else if(part == bottomFeet && checkForPad){
-L_374:
+	JP	P,L_432
+	JR	L_451
+;  649		}
+;  650		else if(part == bottomFeet && checkForPad){
+L_444:
 	LD	A,(IX+-4)
 	OR	A,A
-	JR	NZ,L_381
+	JR	NZ,L_451
 	LD	A,(IX+9)
 	OR	A,A
-	JR	Z,L_381
-;  590			for(f = 6; f <= 14; f += 3) {
+	JR	Z,L_451
+;  651			for(f = 6; f <= 14; f += 3) {
 	LD	BC,6
 	LD	(IX+-3),BC
-	JR	L_370
-L_368:
-;  591				if(gfx_GetPixel(hero.x + f + xVelocity, hero.y + 41 + yVelocity) != 3 || gfx_GetPixel(hero.x + f + xVelocity, hero.y + 40 + yVelocity) == 4) check = false;
-	LD	A,(_hero+3)
+	JR	L_440
+L_438:
+;  652				if(gfx_GetPixel(x + f + xVelocity, y + 41 + yVelocity) != 3 || gfx_GetPixel(x + f + xVelocity, y + 40 + yVelocity) == 4) check = false;
+	LD	A,(IX+21)
 	ADD	A,41
 	LD	B,(IX+12)
 	ADD	A,B
@@ -3920,7 +4820,7 @@ L_368:
 	LD	B,0
 	PUSH	BC
 	LD	BC,(IX+-3)
-	LD	HL,(_hero)
+	LD	HL,(IX+18)
 	ADD	HL,BC
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3933,8 +4833,8 @@ L_368:
 	OR	A,A
 	LD	BC,3
 	SBC	HL,BC
-	JR	NZ,L_367
-	LD	A,(_hero+3)
+	JR	NZ,L_437
+	LD	A,(IX+21)
 	ADD	A,40
 	LD	B,(IX+12)
 	ADD	A,B
@@ -3942,7 +4842,7 @@ L_368:
 	LD	B,0
 	PUSH	BC
 	LD	BC,(IX+-3)
-	LD	HL,(_hero)
+	LD	HL,(IX+18)
 	ADD	HL,BC
 	LD	BC,(IX+15)
 	ADD	HL,BC
@@ -3955,28 +4855,29 @@ L_368:
 	OR	A,A
 	LD	BC,4
 	SBC	HL,BC
-	JR	NZ,L_369
-L_367:
+	JR	NZ,L_439
+L_437:
 	LD	(IX+-5),0
-;  592			}
-L_369:
+;  653			}
+L_439:
 	LD	IY,(IX+-3)
 	LEA	IY,IY+3
 	LD	(IX+-3),IY
-L_370:
+L_440:
 	LD	BC,(IX+-3)
 	LD	HL,14
 	OR	A,A
 	SBC	HL,BC
-	JP	P,L_368
-;  593			return check;
+	JP	P,L_438
+;  654			return check;
 	LD	A,(IX+-5)
-	JR	L_382
-;  594		}
-L_381:
-;  595		return false;
+	JR	L_452
+;  655		}
+L_451:
+;  656		return false;
 	XOR	A,A
-L_382:
+;  657	}	
+L_452:
 	LD	SP,IX
 	POP	IX
 	RET	
@@ -3987,18 +4888,506 @@ L_382:
 ;_hero                               STATIC      6   variable
 ;_gfx_GetPixel                       IMPORT  -----   function
 ;check                                 IX-5      1   variable
-;G_1                                   IX-4      1   variable
+;G_2                                   IX-4      1   variable
 ;f                                     IX-3      3   variable
+;y                                    IX+21      3   parameter
+;x                                    IX+18      3   parameter
 ;xVelocity                            IX+15      3   parameter
 ;yVelocity                            IX+12      3   parameter
 ;checkForPad                           IX+9      1   parameter
 ;part                                  IX+6      3   parameter
 
 
-; Stack Frame Size: 23 (bytes)
-;       Spill Code: -9 (instruction)
+; Stack Frame Size: 29 (bytes)
+;       Spill Code: -16 (instruction)
 
 
+;  658	void establishBoundaries(int numOfMap){
+_establishBoundaries:
+	LD	HL,-82
+	CALL	__frameset
+;  659		int x;
+;  660		int y;
+;  661	
+;  662		int color;
+;  663	
+;  664		int map1colors[4];
+;  665		int map2colors[9] = {0, 8, 9, 10, 11, 12, 13, 14, 15};
+	LEA	DE,IX+-72
+	LD	HL,_0temp453
+	LD	BC,27
+	LDIR	
+;  666		int map3colors[2] = {0, 16};
+	LEA	DE,IX+-15
+	LD	HL,_1temp454
+	LD	BC,6
+	LDIR	
+;  667		int map4colors[3] = {0, 17, 18};
+	LEA	DE,IX+-24
+	LD	HL,_2temp455
+	LD	BC,9
+	LDIR	
+;  668		int map5colors[3] = {0, 19, 20};
+	LEA	DE,IX+-33
+	LD	HL,_3temp456
+	LD	BC,9
+	LDIR	
+;  669	
+;  670		map1colors[0] = 0;
+	LD	BC,0
+	LD	(IX+-45),BC
+;  671		map1colors[1] = 5;
+	LEA	HL,IX+-42
+;  672		map1colors[2] = 6;
+	LEA	IY,IX+-39
+	LD	(IX+-78),IY	; spill
+	LD	BC,5
+	LD	(HL),BC
+;  673		map1colors[3] = 7;
+	LEA	IY,IX+-45
+	LD	BC,6
+	LD	(IX+-75),IY	; spill
+	LD	IY,(IX+-78)	; unspill
+	LD	(IY),BC
+	LD	IY,(IX+-75)	; unspill
+	LEA	HL,IY+9
+	LD	BC,7
+	LD	(HL),BC
+;  674	
+;  675		for(x = 0; x < 320; x += 4){
+	LD	BC,0
+	LD	(IX+-9),BC
+	JR	L_497
+L_495:
+;  676			for(y = 0; y < 240; y += 4){
+	LD	BC,0
+	LD	(IX+-6),BC
+	JR	L_494
+L_492:
+;  677				boundaries[y/4][x/4] = false;
+	LD	BC,4
+	LD	HL,(IX+-6)
+	CALL	__idivs
+	LD	BC,4
+	LD	A,80
+	CALL	__imul_b
+	LD	DE,_boundaries
+	ADD	HL,DE
+	LD	DE,HL
+	LD	HL,(IX+-9)
+	CALL	__idivs
+	ADD	HL,DE
+	LD	(HL),0
+;  678				switch(numOfMap){
+	LD	HL,(IX+6)
+	CALL	__seqcase
+L__294:
+	DW	5
+	DW	1
+	DB	0
+	DW24	L_457	
+
+	DW24	L_464	
+
+	DW24	L_471	
+
+	DW24	L_478	
+
+	DW24	L_485	
+
+	DW24	L_493	
+
+;  679					case 1:
+L_457:
+;  680						for(color = 0; color < 4; color++) {
+	LD	BC,0
+	LD	(IX+-3),BC
+	JR	L_462
+L_460:
+;  681							if(gfx_GetPixel(x, y) == 5)	boundaries[y / 4][x / 4] = true; 
+	LD	C,(IX+-6)
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-9)
+	PUSH	BC
+	CALL	_gfx_GetPixel
+	POP	BC
+	POP	BC
+	UEXT	HL
+	LD	L,A
+	OR	A,A
+	LD	BC,5
+	SBC	HL,BC
+	JR	NZ,L_461
+	LD	BC,4
+	LD	HL,(IX+-6)
+	CALL	__idivs
+	LD	A,80
+	CALL	__imul_b
+	LD	BC,_boundaries
+	ADD	HL,BC
+	LD	DE,HL
+	LD	HL,(IX+-9)
+	LD	BC,4
+	CALL	__idivs
+	ADD	HL,DE
+	LD	(HL),1
+;  682						}
+L_461:
+	LD	BC,(IX+-3)
+	INC	BC
+	LD	(IX+-3),BC
+L_462:
+	LD	BC,4
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_460
+;  683						break;
+	JR	L_493
+;  684					case 2:
+L_464:
+;  685						for(color = 0; color < 9; color++) {
+	LD	BC,0
+	LD	(IX+-3),BC
+	JR	L_469
+L_467:
+;  686							if(gfx_GetPixel(x, y) == map2colors[color])	boundaries[y / 4][x / 4] = true; 
+	LD	HL,(IX+-3)
+	LD	BC,HL
+	ADD	HL,HL
+	ADD	HL,BC
+	LD	BC,HL
+	LEA	HL,IX+-72
+	ADD	HL,BC
+	LD	DE,HL
+	LD	C,(IX+-6)
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-9)
+	PUSH	BC
+	LD	(IX+-81),DE
+	LD	(IX+-82),D
+	CALL	_gfx_GetPixel
+	LD	DE,(IX+-81)
+	LD	D,(IX+-82)
+	POP	BC
+	POP	BC
+	UEXT	HL
+	LD	L,A
+	LD	BC,HL
+	LD	HL,DE
+	LD	HL,(HL)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_468
+	LD	BC,4
+	LD	HL,(IX+-6)
+	CALL	__idivs
+	LD	A,80
+	CALL	__imul_b
+	LD	BC,_boundaries
+	ADD	HL,BC
+	LD	DE,HL
+	LD	HL,(IX+-9)
+	LD	BC,4
+	CALL	__idivs
+	ADD	HL,DE
+	LD	(HL),1
+;  687						}
+L_468:
+	LD	BC,(IX+-3)
+	INC	BC
+	LD	(IX+-3),BC
+L_469:
+	LD	BC,9
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_467
+;  688						break;
+	JR	L_493
+;  689					case 3:
+L_471:
+;  690						for(color = 0; color < 2; color++) {
+	LD	BC,0
+	LD	(IX+-3),BC
+	JR	L_476
+L_474:
+;  691							if(gfx_GetPixel(x, y) == map3colors[color])	boundaries[y / 4][x / 4] = true; 
+	LD	HL,(IX+-3)
+	LD	BC,HL
+	ADD	HL,HL
+	ADD	HL,BC
+	LD	BC,HL
+	LEA	HL,IX+-15
+	ADD	HL,BC
+	LD	DE,HL
+	LD	C,(IX+-6)
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-9)
+	PUSH	BC
+	LD	(IX+-81),DE
+	LD	(IX+-82),D
+	CALL	_gfx_GetPixel
+	LD	DE,(IX+-81)
+	LD	D,(IX+-82)
+	POP	BC
+	POP	BC
+	UEXT	HL
+	LD	L,A
+	LD	BC,HL
+	LD	HL,DE
+	LD	HL,(HL)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_475
+	LD	BC,4
+	LD	HL,(IX+-6)
+	CALL	__idivs
+	LD	A,80
+	CALL	__imul_b
+	LD	BC,_boundaries
+	ADD	HL,BC
+	LD	DE,HL
+	LD	HL,(IX+-9)
+	LD	BC,4
+	CALL	__idivs
+	ADD	HL,DE
+	LD	(HL),1
+;  692						}
+L_475:
+	LD	BC,(IX+-3)
+	INC	BC
+	LD	(IX+-3),BC
+L_476:
+	LD	BC,2
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_474
+;  693						break;
+	JR	L_493
+;  694					case 4:
+L_478:
+;  695						for(color = 0; color < 3; color++) {
+	LD	BC,0
+	LD	(IX+-3),BC
+	JR	L_483
+L_481:
+;  696							if(gfx_GetPixel(x, y) == map4colors[color])	boundaries[y / 4][x / 4] = true;
+	LD	HL,(IX+-3)
+	LD	BC,HL
+	ADD	HL,HL
+	ADD	HL,BC
+	LD	BC,HL
+	LEA	HL,IX+-24
+	ADD	HL,BC
+	LD	DE,HL
+	LD	C,(IX+-6)
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-9)
+	PUSH	BC
+	LD	(IX+-81),DE
+	LD	(IX+-82),D
+	CALL	_gfx_GetPixel
+	LD	DE,(IX+-81)
+	LD	D,(IX+-82)
+	POP	BC
+	POP	BC
+	UEXT	HL
+	LD	L,A
+	LD	BC,HL
+	LD	HL,DE
+	LD	HL,(HL)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_482
+	LD	BC,4
+	LD	HL,(IX+-6)
+	CALL	__idivs
+	LD	A,80
+	CALL	__imul_b
+	LD	BC,_boundaries
+	ADD	HL,BC
+	LD	DE,HL
+	LD	HL,(IX+-9)
+	LD	BC,4
+	CALL	__idivs
+	ADD	HL,DE
+	LD	(HL),1
+;  697						}
+L_482:
+	LD	BC,(IX+-3)
+	INC	BC
+	LD	(IX+-3),BC
+L_483:
+	LD	BC,3
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_481
+;  698						break;
+	JR	L_493
+;  699					case 5:
+L_485:
+;  700						for(color = 0; color < 3; color++) {
+	LD	BC,0
+	LD	(IX+-3),BC
+	JR	L_490
+L_488:
+;  701							if(gfx_GetPixel(x, y) == map5colors[color])	boundaries[y / 4][x / 4] = true; 
+	LD	HL,(IX+-3)
+	LD	BC,HL
+	ADD	HL,HL
+	ADD	HL,BC
+	LD	BC,HL
+	LEA	HL,IX+-33
+	ADD	HL,BC
+	LD	DE,HL
+	LD	C,(IX+-6)
+	LD	B,0
+	PUSH	BC
+	LD	BC,(IX+-9)
+	PUSH	BC
+	LD	(IX+-81),DE
+	LD	(IX+-82),D
+	CALL	_gfx_GetPixel
+	LD	DE,(IX+-81)
+	LD	D,(IX+-82)
+	POP	BC
+	POP	BC
+	UEXT	HL
+	LD	L,A
+	LD	BC,HL
+	LD	HL,DE
+	LD	HL,(HL)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_489
+	LD	BC,4
+	LD	HL,(IX+-6)
+	CALL	__idivs
+	LD	A,80
+	CALL	__imul_b
+	LD	BC,_boundaries
+	ADD	HL,BC
+	LD	DE,HL
+	LD	HL,(IX+-9)
+	LD	BC,4
+	CALL	__idivs
+	ADD	HL,DE
+	LD	(HL),1
+;  702						}
+L_489:
+	LD	BC,(IX+-3)
+	INC	BC
+	LD	(IX+-3),BC
+L_490:
+	LD	BC,3
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_488
+;  703						break;
+;  704				}
+;  705			}
+L_493:
+	LD	IY,(IX+-6)
+	LEA	IY,IY+4
+	LD	(IX+-6),IY
+L_494:
+	LD	BC,240
+	LD	HL,(IX+-6)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_492
+	LD	IY,(IX+-9)
+	LEA	IY,IY+4
+	LD	(IX+-9),IY
+;  706		}
+L_497:
+	LD	BC,320
+	LD	HL,(IX+-9)
+	OR	A,A
+	SBC	HL,BC
+	CALL	__setflag
+	JP	M,L_495
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _establishBoundaries ***************************
+;Name                         Addr/Register   Size   Type
+;_gfx_GetPixel                       IMPORT  -----   function
+;_boundaries                         STATIC   4800   variable
+;_3temp456                           STATIC      9   variable
+;_2temp455                           STATIC      9   variable
+;_1temp454                           STATIC      6   variable
+;_0temp453                           STATIC     27   variable
+;map2colors                           IX-72     27   variable
+;map1colors                           IX-45     12   variable
+;map5colors                           IX-33      9   variable
+;map4colors                           IX-24      9   variable
+;map3colors                           IX-15      6   variable
+;x                                     IX-9      3   variable
+;y                                     IX-6      3   variable
+;color                                 IX-3      3   variable
+;numOfMap                              IX+6      3   parameter
+
+
+; Stack Frame Size: 91 (bytes)
+;       Spill Code: -16 (instruction)
+
+
+	SEGMENT TEXT
+_0temp453:
+	DW	0
+	DB	0
+	DW	8
+	DB	0
+	DW	9
+	DB	0
+	DW	10
+	DB	0
+	DW	11
+	DB	0
+	DW	12
+	DB	0
+	DW	13
+	DB	0
+	DW	14
+	DB	0
+	DW	15
+	DB	0
+_1temp454:
+	DW	0
+	DB	0
+	DW	16
+	DB	0
+_2temp455:
+	DW	0
+	DB	0
+	DW	17
+	DB	0
+	DW	18
+	DB	0
+_3temp456:
+	DW	0
+	DB	0
+	DW	19
+	DB	0
+	DW	20
+	DB	0
 	XREF _arrow_compressed:ROM
 	XREF _map5_compressed:ROM
 	XREF _map4_compressed:ROM
@@ -4020,9 +5409,12 @@ L_382:
 	XREF _gfx_ScaledSprite_NoClip:ROM
 	XREF _gfx_GetSprite:ROM
 	XREF _gfx_TransparentSprite_NoClip:ROM
+	XREF _gfx_TransparentSprite:ROM
 	XREF _gfx_Sprite_NoClip:ROM
+	XREF _gfx_Sprite:ROM
 	XREF _gfx_PrintStringXY:ROM
 	XREF _gfx_Blit:ROM
+	XREF _gfx_SwapDraw:ROM
 	XREF _gfx_SetDraw:ROM
 	XREF _gfx_FillRectangle:ROM
 	XREF _gfx_GetPixel:ROM
@@ -4037,6 +5429,7 @@ L_382:
 	XREF _malloc:ROM
 	XREF _floor:ROM
 	XREF __idivs:ROM
+	XREF __ineg:ROM
 	XREF __iremu:ROM
 	XREF __fadd:ROM
 	XREF __fsub:ROM
@@ -4048,12 +5441,15 @@ L_382:
 	XREF __itol:ROM
 	XREF __ildix:ROM
 	XREF __istix:ROM
-	XREF __lldix:ROM
-	XREF __lstix:ROM
 	XREF __frameset:ROM
 	XREF __setflag:ROM
 	XREF __icmpzero:ROM
+	XREF __seqcase:ROM
+	XREF __imul_b:ROM
+	XDEF _establishBoundaries
 	XDEF _isTouching
 	XDEF _main
+	XDEF _boundaries
+	XDEF _enemy
 	XDEF _hero
 	END
