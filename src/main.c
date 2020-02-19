@@ -233,11 +233,6 @@ void main(void) {
 
 	establishBoundaries(mapNum);
 	gfx_SetColor(0);
-	for(x = 0; x < 80; x++){
-		for(y = 0; y < 60; y++){
-			if(boundaries[y][x]) gfx_FillRectangle(x * 4, y * 4, 4, 4);
-		}
-	}
 
 	gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	gfx_GetSprite(behindArrow, arrow.x, arrow.y);
@@ -381,7 +376,6 @@ void main(void) {
 		dbg_sprintf(dbgout, "tempBool2 = %d\n", tempBool2);
 		dbg_sprintf(dbgout, "shootingDir = %d\n", shootingDir);
 		dbg_sprintf(dbgout, "arrowInit = (%d, %d)\n", arrowInit.x, arrowInit.y);
-		// gfx_BlitBuffer();
 
 		if(((rightKeyNotAlpha && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) || (leftKeyNotAlpha && !isTouching(leftSide, false, 0, -1, hero.x , hero.y))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
@@ -663,8 +657,8 @@ void establishBoundaries(int numOfMap){
 
 	int map1colors[4] = {0, 5, 6, 7};
 	int map2colors[9] = {0, 8, 9, 10, 11, 12, 13, 14, 15};
-	int map3colors[2] = {0, 16};
-	int map4colors[3] = {0, 17, 18};
+	int map3colors[2] = {0, 43};
+	int map4colors[3] = {0, 17, 61};
 	int map5colors[3] = {0, 19, 20};
 
 	for(x = 0; x < 320; x += 4){
@@ -673,7 +667,7 @@ void establishBoundaries(int numOfMap){
 			switch(numOfMap){
 				case 1:
 					for(color = 0; color < 4; color++) {
-						if(gfx_GetPixel(x, y) == 5)	boundaries[y / 4][x / 4] = true; 
+						if(gfx_GetPixel(x, y) == map1colors[color])	boundaries[y / 4][x / 4] = true; 
 					}
 					break;
 				case 2:

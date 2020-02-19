@@ -12,7 +12,7 @@ _map4_compressed:
 	DB	17
 	DB	0
 	DB	0
-	DB	47
+	DB	52
 	DB	20
 	DB	0
 	DB	49
@@ -38,7 +38,7 @@ _map4_compressed:
 	DB	61
 	DB	0
 	DB	0
-	DB	52
+	DB	44
 	DB	138
 	DB	0
 	DB	132
@@ -106,9 +106,9 @@ _map4_compressed:
 	DB	114
 	DB	60
 	DB	207
-	DB	16
+	DB	60
 	DB	64
-	DB	16
+	DB	60
 	DB	153
 	DB	255
 	DB	191
@@ -140,8 +140,8 @@ _map4_compressed:
 	DB	155
 	DB	207
 	DB	196
-	DB	24
-	DB	24
+	DB	23
+	DB	23
 	DB	9
 	DB	177
 	DB	255

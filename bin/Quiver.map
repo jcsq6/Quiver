@@ -6,10 +6,10 @@ libs     D1A8DA D1A94B            71h
 startup  D1A94B D1A98A            3Fh
 cleanup  D1A98A D1A99E            14h
 exit     D1A99E D1A9A4             6h
-code     D1A9A4 D1D3DA          2A36h
-data     D1D3DA D1DCE4           90Ah
-strsect  D1DCE4 D1DCFD            19h
-text     D1DCFD D1DD30            33h
+code     D1A9A4 D1D350          29ACh
+data     D1D350 D1DC5A           90Ah
+strsect  D1DC5A D1DC73            19h
+text     D1DC73 D1DCB2            3Fh
 bss      D031F6 D044C8 D13FD6   12D2h
 header   D1A87F D1A882             3h
 
@@ -21,7 +21,7 @@ _os_EnableHomeTextBuffer      = D1A9B6
 _srandom                      = D1A9C8
 __setstate                    = D1A9CF
 _random                       = D1A9DF
-__state                       = D1D3DA
+__state                       = D1D350
 _zx7_Decompress               = D1AA36
 __seqcase                     = 000210
 __ltof                        = 000284
@@ -54,23 +54,23 @@ _exit                         = D1A9A0
 __exit                        = D1A979
 __exitsp                      = D1A979
 __errsp                       = D1A979
-_HeroJumpRight0_compressed    = D1D40F
-_HeroJumpRight1_compressed    = D1D491
-_HeroJumpRight2_compressed    = D1D51B
-_HeroJumpUpRight_compressed   = D1D5CC
-_HeroRight0_compressed        = D1D652
-_HeroRight1_compressed        = D1D6DA
-_HeroRight2_compressed        = D1D768
-_HeroStill_compressed         = D1D7F8
-_arrow_compressed             = D1D86B
-_global_palette               = D1D881
-_map1_compressed              = D1D901
-_map2_compressed              = D1D9CD
-_map3_compressed              = D1DABE
-_map4_compressed              = D1DB3C
-_map5_compressed              = D1DBF8
-_establishBoundaries          = D1D05A
-_isTouching                   = D1CD9B
+_HeroJumpRight0_compressed    = D1D385
+_HeroJumpRight1_compressed    = D1D407
+_HeroJumpRight2_compressed    = D1D491
+_HeroJumpUpRight_compressed   = D1D542
+_HeroRight0_compressed        = D1D5C8
+_HeroRight1_compressed        = D1D650
+_HeroRight2_compressed        = D1D6DE
+_HeroStill_compressed         = D1D76E
+_arrow_compressed             = D1D7E1
+_global_palette               = D1D7F7
+_map1_compressed              = D1D877
+_map2_compressed              = D1D943
+_map3_compressed              = D1DA34
+_map4_compressed              = D1DAB2
+_map5_compressed              = D1DB6E
+_establishBoundaries          = D1CFD8
+_isTouching                   = D1CD19
 _main                         = D1ABB1
 _boundaries                   = D03208
 _enemy                        = D03202

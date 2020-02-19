@@ -33,7 +33,7 @@ _map5_compressed:
 	DB	5
 	DB	164
 	DB	27
-	DB	57
+	DB	56
 	DB	116
 	DB	0
 	DB	76
@@ -81,7 +81,7 @@ _map5_compressed:
 	DB	15
 	DB	211
 	DB	79
-	DB	21
+	DB	63
 	DB	65
 	DB	0
 	DB	204
@@ -154,16 +154,16 @@ _map5_compressed:
 	DB	230
 	DB	174
 	DB	200
-	DB	54
+	DB	53
 	DB	19
 	DB	92
 	DB	79
-	DB	54
+	DB	53
 	DB	0
 	DB	9
 	DB	107
 	DB	79
-	DB	54
+	DB	53
 	DB	0
 	DB	128
 	DB	153
