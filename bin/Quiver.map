@@ -2,76 +2,80 @@ Segment  Base   Top    High   Length
 -------- ------ ------ ------ -------
 icon     D1A882 D1A882             0h
 launcher D1A882 D1A8DA            58h
-libs     D1A8DA D1A94B            71h
-startup  D1A94B D1A98A            3Fh
-cleanup  D1A98A D1A99E            14h
-exit     D1A99E D1A9A4             6h
-code     D1A9A4 D1D350          29ACh
-data     D1D350 D1DC5A           90Ah
-strsect  D1DC5A D1DC73            19h
-text     D1DC73 D1DCB2            3Fh
-bss      D031F6 D044C8 D13FD6   12D2h
+libs     D1A8DA D1A957            7Dh
+startup  D1A957 D1A996            3Fh
+cleanup  D1A996 D1A9AA            14h
+exit     D1A9AA D1A9B0             6h
+code     D1A9B0 D1D597          2BE7h
+data     D1D597 D1DFC9           A32h
+strsect  D1DFC9 D1DFE2            19h
+text     D1DFE2 D1E021            3Fh
+bss      D031F6 D05788 D13FD6   2592h
 header   D1A87F D1A882             3h
 
 Label                           Value
 -----------------------------   ------
 _floor                        = 0220F4
-_os_DisableHomeTextBuffer     = D1A9A4
-_os_EnableHomeTextBuffer      = D1A9B6
-_srandom                      = D1A9C8
-__setstate                    = D1A9CF
-_random                       = D1A9DF
-__state                       = D1D350
-_zx7_Decompress               = D1AA36
+_os_DisableHomeTextBuffer     = D1A9B0
+_os_EnableHomeTextBuffer      = D1A9C2
+_srandom                      = D1A9D4
+__setstate                    = D1A9DB
+_random                       = D1A9EB
+__state                       = D1D597
+_zx7_Decompress               = D1AA42
+__lstix                       = 0001F0
 __seqcase                     = 000210
 __ltof                        = 000284
-__frameset                    = D1AAA2
+__frameset                    = D1AAAE
 __fmul                        = 000288
 __fsub                        = 000290
 __imul_b                      = 000158
 __imul_b                      = 000150
 __itol                        = 000194
 __fcmp                        = 000274
-__s_sbrk                      = D1AAB0
+__s_sbrk                      = D1AABC
 __ildix                       = 000148
 __istix                       = 00018C
 __idivs                       = 00013C
+__lldix                       = 0001C0
 __iremu                       = 000170
 __icmpzero                    = 000138
-_srand                        = D1AAD0
+_srand                        = D1AADC
 __fadd                        = 000270
 __fdiv                        = 000278
 __ineg                        = 000160
 __setflag                     = 000218
 __ftol                        = 00027C
-_malloc                       = D1AB09
+_malloc                       = D1AB15
 __alloc_base                  = D031F6
 __findlibload                 = D1A882
-__ccleanup                    = D1A98A
+__ccleanup                    = D1A996
 _errno                        = D008DC
 _init                         = D1A882
-_exit                         = D1A9A0
-__exit                        = D1A979
-__exitsp                      = D1A979
-__errsp                       = D1A979
-_HeroJumpRight0_compressed    = D1D385
-_HeroJumpRight1_compressed    = D1D407
-_HeroJumpRight2_compressed    = D1D491
-_HeroJumpUpRight_compressed   = D1D542
-_HeroRight0_compressed        = D1D5C8
-_HeroRight1_compressed        = D1D650
-_HeroRight2_compressed        = D1D6DE
-_HeroStill_compressed         = D1D76E
-_arrow_compressed             = D1D7E1
-_global_palette               = D1D7F7
-_map1_compressed              = D1D877
-_map2_compressed              = D1D943
-_map3_compressed              = D1DA34
-_map4_compressed              = D1DAB2
-_map5_compressed              = D1DB6E
-_establishBoundaries          = D1CFD8
-_isTouching                   = D1CD19
-_main                         = D1ABB1
+_exit                         = D1A9AC
+__exit                        = D1A985
+__exitsp                      = D1A985
+__errsp                       = D1A985
+_HeroJumpRight0_compressed    = D1D5CC
+_HeroJumpRight1_compressed    = D1D64E
+_HeroJumpRight2_compressed    = D1D6D8
+_HeroJumpUpRight_compressed   = D1D789
+_HeroRight0_compressed        = D1D80F
+_HeroRight1_compressed        = D1D897
+_HeroRight2_compressed        = D1D925
+_HeroStill_compressed         = D1D9B5
+_arrow_compressed             = D1DA28
+_global_palette               = D1DA3E
+_map1_compressed              = D1DAC0
+_map2_compressed              = D1DB8C
+_map3_compressed              = D1DC7D
+_map4_compressed              = D1DCFB
+_map5_compressed              = D1DDB7
+_menu_compressed              = D1DEA3
+_establishAIView              = D1D16F
+_isTouching                   = D1CEB0
+_main                         = D1ABBD
+_horizDistances               = D044C8
 _boundaries                   = D03208
 _enemy                        = D03202
 _hero                         = D031FC
@@ -84,15 +88,18 @@ _gfx_GetPixel                 = D1A901
 _gfx_SetDraw                  = D1A905
 _gfx_SwapDraw                 = D1A909
 _gfx_Blit                     = D1A90D
-_gfx_PrintStringXY            = D1A911
-_gfx_FillRectangle            = D1A915
-_gfx_AllocSprite              = D1A919
-_gfx_Sprite                   = D1A91D
-_gfx_TransparentSprite        = D1A921
-_gfx_Sprite_NoClip            = D1A925
-_gfx_TransparentSprite_NoClip = D1A929
-_gfx_GetSprite                = D1A92D
-_gfx_ScaledSprite_NoClip      = D1A931
-_gfx_FlipSpriteY              = D1A935
-_gfx_SetTransparentColor      = D1A939
-_kb_Scan                      = D1A947
+_gfx_PrintInt                 = D1A911
+_gfx_PrintStringXY            = D1A915
+_gfx_SetTextXY                = D1A919
+_gfx_FillRectangle            = D1A91D
+_gfx_AllocSprite              = D1A921
+_gfx_Sprite                   = D1A925
+_gfx_TransparentSprite        = D1A929
+_gfx_Sprite_NoClip            = D1A92D
+_gfx_TransparentSprite_NoClip = D1A931
+_gfx_GetSprite                = D1A935
+_gfx_ScaledSprite_NoClip      = D1A939
+_gfx_FlipSpriteY              = D1A93D
+_gfx_SetTextScale             = D1A941
+_gfx_SetTransparentColor      = D1A945
+_kb_Scan                      = D1A953

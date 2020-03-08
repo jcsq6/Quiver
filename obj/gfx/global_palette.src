@@ -37,8 +37,8 @@ _global_palette:
 	DB	48
 	DB	114
 	DB	152
-	DB	220
-	DB	123
+	DB	115
+	DB	50
 	DB	206
 	DB	185
 	DB	241
@@ -47,6 +47,8 @@ _global_palette:
 	DB	255
 	DB	99
 	DB	216
+	DB	165
+	DB	88
 	DB	161
 	DB	209
 	DB	164
@@ -61,10 +63,10 @@ _global_palette:
 	DB	127
 	DB	198
 	DB	24
-	DB	220
-	DB	255
 	DB	132
 	DB	91
+	DB	220
+	DB	255
 	DB	114
 	DB	123
 	DB	255
@@ -75,14 +77,14 @@ _global_palette:
 	DB	194
 	DB	33
 	DB	116
-	DB	99
-	DB	12
-	DB	87
-	DB	175
 	DB	164
 	DB	223
+	DB	87
+	DB	175
 	DB	66
 	DB	140
+	DB	99
+	DB	12
 	DB	80
 	DB	251
 	DB	89
@@ -91,26 +93,28 @@ _global_palette:
 	DB	123
 	DB	100
 	DB	219
-	DB	83
-	DB	58
-	DB	83
-	DB	62
-	DB	90
-	DB	147
-	DB	162
-	DB	217
-	DB	81
-	DB	247
-	DB	158
-	DB	247
 	DB	149
 	DB	202
+	DB	158
+	DB	247
+	DB	83
+	DB	58
+	DB	90
+	DB	147
+	DB	81
+	DB	247
+	DB	83
+	DB	62
+	DB	100
+	DB	252
 	DB	115
 	DB	118
 	DB	132
 	DB	219
 	DB	248
 	DB	214
+	DB	162
+	DB	217
 	DB	83
 	DB	190
 	DB	161
@@ -127,13 +131,11 @@ _global_palette:
 	DB	198
 	DB	212
 	DB	58
-	DB	241
-	DB	177
+	DB	220
+	DB	123
 	DB	222
 	DB	0
-	DB	165
-	DB	88
 	XDEF _global_palette
-;    1	unsigned char global_palette[128] = 
+;    1	unsigned char global_palette[130] = 
 ;    2	{ 
 	END

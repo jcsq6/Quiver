@@ -12,10 +12,10 @@ _map4_compressed:
 	DB	17
 	DB	0
 	DB	0
-	DB	52
+	DB	53
 	DB	20
 	DB	0
-	DB	49
+	DB	44
 	DB	184
 	DB	4
 	DB	94
@@ -29,16 +29,16 @@ _map4_compressed:
 	DB	45
 	DB	79
 	DB	0
-	DB	49
+	DB	44
 	DB	2
 	DB	36
 	DB	0
 	DB	172
 	DB	75
-	DB	61
+	DB	18
 	DB	0
 	DB	0
-	DB	44
+	DB	49
 	DB	138
 	DB	0
 	DB	132
@@ -55,7 +55,7 @@ _map4_compressed:
 	DB	0
 	DB	161
 	DB	0
-	DB	49
+	DB	44
 	DB	248
 	DB	28
 	DB	126
@@ -64,7 +64,7 @@ _map4_compressed:
 	DB	230
 	DB	153
 	DB	4
-	DB	49
+	DB	44
 	DB	15
 	DB	192
 	DB	28
@@ -106,9 +106,9 @@ _map4_compressed:
 	DB	114
 	DB	60
 	DB	207
-	DB	60
+	DB	62
 	DB	64
-	DB	60
+	DB	62
 	DB	153
 	DB	255
 	DB	191
@@ -134,14 +134,14 @@ _map4_compressed:
 	DB	9
 	DB	188
 	DB	207
-	DB	33
+	DB	34
 	DB	64
-	DB	33
+	DB	34
 	DB	155
 	DB	207
 	DB	196
-	DB	23
-	DB	23
+	DB	24
+	DB	24
 	DB	9
 	DB	177
 	DB	255

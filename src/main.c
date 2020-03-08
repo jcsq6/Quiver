@@ -16,7 +16,7 @@
 #include "gfx/gfx.h"
 
 bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVelocity, int x, int y);
-void establishBoundaries(int numOfMap);
+void establishAIView(int numOfMap);
 
 enum direction{
 	right,
@@ -37,21 +37,30 @@ enum bodyParts{
 	bottomFeet
 };
 
+struct enemyDatas{
+	gfx_point_t dest;
+	gfx_point_t pos;
+	enum direction dir;
+	gfx_sprite_t behindChar;
+};
+
 gfx_point_t hero;
 gfx_point_t enemy;
 
 bool boundaries[60][80];
-
 void main(void) {
 
 	int x, y, i, mapNum, velocity;
 
 	gfx_point_t lastStill;
 	gfx_point_t arrow, arrowInit;
+	gfx_point_t dot;
+
+	struct enemyDatas enemy;
 
 	gfx_sprite_t *map;
 
-	gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2, *arrowSpr, *behindArrow, *arrowSprLeft, *arrowSprTiltRight, *arrowSprTiltLeft;
+	gfx_sprite_t *HeroStill, *HeroLeft0, *HeroLeft1, *HeroLeft2, *HeroRight0, *HeroRight1, *HeroRight2,*HeroJumpRight0, *HeroJumpRight1, *HeroJumpRight2, *HeroJumpUpRight, *HeroJumpUpLeft, *HeroJumpLeft0, *HeroJumpLeft1, *HeroJumpLeft2, *arrowSpr, *behindArrow, *arrowSprLeft, *arrowSprTiltRight, *arrowSprTiltLeft, *behindDot;
 
 	double distance, arrowDistance;
 	unsigned int step;
@@ -61,7 +70,7 @@ void main(void) {
 
 	bool doubleJumped, keyIsReleased, inLadder, facingRight, ascending, key, prevkey, isBoosted, tempBool1, tempBool2;
 
-	bool alphaKey, leftKey, rightKey, downKey, upKey, modeKey, secondKey, rightKeyNotAlpha, leftKeyNotAlpha, downKeyNotAlpha, upKeyNotAlpha, alphaReleased, standing, arrowTouchingBottom, arrowTouchingTip;
+	bool alphaKey, leftKey, rightKey, downKey, upKey, modeKey, secondKey, shootingReleased, arrowTouchingBottom, arrowTouchingTip;
 
 	gfx_sprite_t *heroRunRight[3];
 	gfx_sprite_t *heroRunLeft[3];
@@ -94,6 +103,7 @@ void main(void) {
 	arrowSprLeft = gfx_MallocSprite(20, 4);
 	arrowSprTiltLeft = gfx_MallocSprite(20, 4);
 	arrowSprTiltRight = gfx_MallocSprite(20, 4);
+	behindDot = gfx_MallocSprite(4, 4);
 
 
 	zx7_Decompress( HeroStill, HeroStill_compressed );
@@ -121,7 +131,7 @@ void main(void) {
 
 	ascending = doubleJumped = inLadder = isBoosted = keyIsReleased = false;
 
-	facingRight = alphaReleased = standing = true;
+	facingRight = shootingReleased = true;
 
 	heroRunRight[0] = HeroRight0;
 	heroRunRight[1] = HeroRight1;
@@ -157,8 +167,18 @@ void main(void) {
 
 	gfx_FillScreen(1);
 
+	zx7_Decompress( map, menu_compressed );
+	gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
 	while(!(kb_Data[6] & kb_Enter)){
+	}
+	shootingReleased = false;
+
+	gfx_FillScreen(1);
+
+	while(!(kb_Data[6] & kb_Enter) || !shootingReleased ){
 		kb_Scan();
+
+		if(!(kb_Data[6] & kb_Enter) && !shootingReleased) shootingReleased = true;
 
    		key = kb_Data[7] == kb_Down;
 
@@ -199,27 +219,41 @@ void main(void) {
 		zx7_Decompress( map, map1_compressed );
 		hero.x = 0;
 		hero.y = 150;
+		enemy.pos.x = 200;
+		enemy.pos.y = 150;
 	}
 	else if(mapNum == 2) {
 		zx7_Decompress( map, map2_compressed );		
 		hero.x = 0;
 		hero.y = 180;
+		enemy.pos.x = 200;
+		enemy.pos.y = 180;
 	}
 	else if(mapNum == 3) {
 		zx7_Decompress( map, map3_compressed );
 		hero.x = 0;
 		hero.y = 180;
+		enemy.pos.x = 200;
+		enemy.pos.y = 180;
 	}
 	else if(mapNum == 4) {
 		zx7_Decompress( map, map4_compressed );
 		hero.x = 50;
 		hero.y = 100;
+		enemy.pos.x = 200;
+		enemy.pos.y = 100;
 	}		
 	else if(mapNum == 5) {
 		zx7_Decompress( map, map5_compressed );
 		hero.x = 80;
 		hero.y = 180;
+		enemy.pos.x = 200;
+		enemy.pos.y = 180;
 	}
+
+	enemy.dest.x = 0;
+	enemy.dest.y = 0;
+
 
 	gfx_ScaledSprite_NoClip(map, 0, 0, 4, 4);
 
@@ -231,8 +265,17 @@ void main(void) {
 
 	gfx_SwapDraw();
 
-	establishBoundaries(mapNum);
+	establishAIView(mapNum);
 	gfx_SetColor(0);
+
+	gfx_SetTextScale(1, 1);
+	for(y = 0; x < 240; y += 4){
+		for(x = 0; y < 320; x += 4){
+			gfx_SetTextXY(x, y);
+			gfx_PrintInt(horizDistances[y / 4][x / 4], 1);
+		}
+	}
+	gfx_SetTextScale(1, 1);
 
 	gfx_GetSprite(behind_sprite, hero.x, hero.y);
 	gfx_GetSprite(behindArrow, arrow.x, arrow.y);
@@ -242,22 +285,48 @@ void main(void) {
 
 		kb_Scan();
 
-		alphaKey = kb_Data[2] & kb_Alpha;
-		secondKey = kb_Data[1] & kb_2nd;
-		modeKey = kb_Data[1] & kb_Mode;
-		upKey = kb_Data[7] & kb_Up;
-		downKey = kb_Data[7] & kb_Down;
+
+		if(enemy.dest.x == 0 && enemy.dest.y == 0){
+			dot.x = 0;
+			dot.y = 0;
+			gfx_GetSprite(behindDot, dot.x, dot.y);
+			while(!kb_Data[6] & kb_Enter){
+				kb_Scan();
+				gfx_Sprite_NoClip(behindDot, dot.x, dot.y);
+
+				upKey = kb_Data[7] & kb_Up;
+				downKey = kb_Data[7] & kb_Down;
+				leftKey = kb_Data[7] & kb_Left;
+				rightKey = kb_Data[7] & kb_Right;
+
+				
+				if(upKey && dot.y != 0) dot.y--;
+				if(downKey && dot.y != 236) dot.y++;
+				if(leftKey && dot.x != 0) dot.x--;
+				if(rightKey && dot.x != 316) dot.x++;
+
+				gfx_GetSprite(behindDot, dot.x, dot.y);
+				gfx_FillRectangle(dot.x, dot.y, 4, 4);
+				gfx_BlitBuffer();
+			}
+			enemy.dest.x = dot.x;
+			enemy.dest.y = dot.y;
+		}
+ 		//alphaKey = kb_Data[2] & kb_Alpha;
+		secondKey = kb_Data[1] & kb_2nd || kb_Data[2] & kb_Math;
+		modeKey = kb_Data[1] & kb_Mode || kb_Data[2] & kb_Recip;
+		upKey = kb_Data[7] & kb_Up || kb_Data[6] & kb_Sub;
+		downKey = kb_Data[7] & kb_Down || kb_Data[2] & kb_Ln;
 		leftKey = kb_Data[7] & kb_Left;
 		rightKey = kb_Data[7] & kb_Right;
 
-		if(shootingDir == nothing && (alphaKey || kb_Data[3] & kb_0) && (rightKey || leftKey) && alphaReleased){
+		if(shootingDir == nothing && (rightKey || leftKey) && shootingReleased){
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 			gfx_Sprite(behindArrow, arrow.x, arrow.y);
 			gfx_GetSprite(behind_sprite, hero.x, hero.y);
 			
-			alphaReleased = false;
+			shootingReleased = false;
 			if(rightKey) {
-				if(!rightKeyNotAlpha) standing = false;
 				shootingDir = right;
 				arrow.x = hero.x + 20;
 				arrow.y = hero.y + 8;
@@ -277,7 +346,6 @@ void main(void) {
 				else if(mapNum == 4 && arrow.x > 300) arrow.x += arrow.x - 300;
 			}
 			if(leftKey) {
-				if(!leftKeyNotAlpha) standing = false;
 				shootingDir = left;
 				arrow.x = hero.x - 20;
 				arrow.y = hero.y + 8;
@@ -344,21 +412,14 @@ void main(void) {
 					}
 					shootingDir = nothing;
 					arrowDistance = 80;
-					if(alphaReleased) standing = true;
 					break;
 				}
 			}
 		}
 
-		if(!alphaKey && !kb_Data[3] & kb_0 && !alphaReleased) {
-			alphaReleased = true;
-			standing = true;
+		if(!rightKey && !leftKey && !shootingReleased) {
+			shootingReleased = true;
 		}
-
-		rightKeyNotAlpha = (modeKey || rightKey) && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
-		leftKeyNotAlpha = (secondKey || leftKey) && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
-		downKeyNotAlpha = downKey && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
-		upKeyNotAlpha = upKey && (!(alphaKey && !kb_Data[3] & kb_0) || (shootingDir != nothing)) && (alphaReleased || standing);
 		
 		tempBool1 = isTouching(bottomFeet, false, velocity - 1, 0, hero.x , hero.y);
 		tempBool2 = isTouching(bottomFeet, false, 0, 0, hero.x , hero.y);
@@ -377,13 +438,13 @@ void main(void) {
 		dbg_sprintf(dbgout, "shootingDir = %d\n", shootingDir);
 		dbg_sprintf(dbgout, "arrowInit = (%d, %d)\n", arrowInit.x, arrowInit.y);
 
-		if(((rightKeyNotAlpha && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) || (leftKeyNotAlpha && !isTouching(leftSide, false, 0, -1, hero.x , hero.y))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
+		if(((modeKey && !isTouching(rightSide, false, 0, 1, hero.x , hero.y)) || (secondKey && !isTouching(leftSide, false, 0, -1, hero.x , hero.y))) && jumpingDir == nothing && !(inLadder && hero.y < 59 && hero.y > 41 && mapNum == 1) && !isBoosted && !ascending)  {
 			gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
 			//IF RIGHT IS PRESSED
 			if(modeKey || rightKey) {
 				facingRight = true;
-				if((upKeyNotAlpha) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
+				if(upKey && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
 					jumpingDir = right;
 					ascending = true;
 					keyIsReleased = false;
@@ -394,9 +455,9 @@ void main(void) {
 				hero.x += 2;
 			};
 			//IF LEFT IS PRESSED
-			if(secondKey || leftKey){ 
+			if(secondKey){ 
 				facingRight = false;
-				if((upKeyNotAlpha) && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
+				if(upKey && (!inLadder || (mapNum == 1 && hero.y == 40) || (mapNum == 2 && hero.y == 120))) {
 					jumpingDir = left;
 					ascending = true;
 					keyIsReleased = false;
@@ -435,13 +496,13 @@ void main(void) {
 
 			gfx_GetSprite(behind_sprite, hero.x, hero.y);
 
-			if(rightKey || modeKey){
+			if(modeKey){
 				distance = hero.x - lastStill.x;
 				step = floor(distance/6);
 
 				gfx_TransparentSprite_NoClip(heroRunRight[ step % 3 ], hero.x, hero.y);
 			}
-			if(secondKey || leftKey){
+			if(secondKey){
 				distance = lastStill.x - hero.x;
 				step = floor(distance/6);
 
@@ -496,12 +557,12 @@ void main(void) {
 			}
 
 			//MOVING LADDER
-			if(inLadder && (upKeyNotAlpha) && !(leftKey || secondKey) && !(rightKey || modeKey)){
+			if(inLadder && upKey && !secondKey && !modeKey){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 				hero.y -= 2;
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
 			}
-			else if(inLadder && downKeyNotAlpha){
+			else if(inLadder && downKey){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 				if(hero.y != 140 && mapNum == 1 || mapNum != 1 && hero.y != 200) hero.y += 2;
 				gfx_GetSprite(behind_sprite, hero.x, hero.y);
@@ -511,7 +572,7 @@ void main(void) {
 
 			
 			//CHECK FOR JUMPING UP
-			if(upKeyNotAlpha && !doubleJumped && !inLadder && ((keyIsReleased && jumpingDir != nothing) || (!keyIsReleased && jumpingDir == nothing))) {
+			if(upKey && !doubleJumped && !inLadder && ((keyIsReleased && jumpingDir != nothing) || (!keyIsReleased && jumpingDir == nothing))) {
 				jumpingDir = up;
 				isBoosted = false;
 				ascending = true;
@@ -576,11 +637,11 @@ void main(void) {
 			else if(jumpingDir == up){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
+				if(secondKey && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x--;
 					facingRight = false;
 				}
-				if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
+				if(modeKey && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x++;
 					facingRight = true;
 				}
@@ -594,11 +655,11 @@ void main(void) {
 			else if(isBoosted){
 				gfx_Sprite_NoClip(behind_sprite, hero.x, hero.y);
 
-				if(leftKeyNotAlpha && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
+				if(secondKey && !isTouching(leftSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x--;
 					facingRight = false;
 				}
-				if(rightKeyNotAlpha && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
+				if(modeKey && !isTouching(rightSide, false, 0, 0, hero.x , hero.y)) {
 					hero.x++;
 					facingRight = true;
 				}
@@ -649,11 +710,13 @@ bool isTouching(enum bodyParts part, bool checkForPad, int yVelocity, int xVeloc
 	}
 	return false;
 }	
-void establishBoundaries(int numOfMap){
+void establishAIView(int numOfMap){
 	int x;
 	int y;
 
 	int color;
+
+	int distance;
 
 	int map1colors[4] = {0, 5, 6, 7};
 	int map2colors[9] = {0, 8, 9, 10, 11, 12, 13, 14, 15};
@@ -661,8 +724,16 @@ void establishBoundaries(int numOfMap){
 	int map4colors[3] = {0, 17, 61};
 	int map5colors[3] = {0, 19, 20};
 
-	for(x = 0; x < 320; x += 4){
-		for(y = 0; y < 240; y += 4){
+	distance = -1;
+	for(y = 0; x < 240; y += 4){
+		for(x = 0; y < 320; x += 4){
+
+			if(distance != -1 && gfx_GetPixel(x, y) != 0) distance++;
+			else if(distance == -1 && gfx_GetPixel(x, y) == 0) distance++;
+			else if(distance != -1 && gfx_GetPixel(x, y) == 0) distance = -1;
+
+			horizDistances[y / 4][x / 4] = distance;
+
 			boundaries[y/4][x/4] = false;
 			switch(numOfMap){
 				case 1:

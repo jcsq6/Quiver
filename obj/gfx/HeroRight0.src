@@ -11,7 +11,7 @@ _HeroRight0_compressed:
 	DB	1
 	DB	132
 	DB	0
-	DB	46
+	DB	54
 	DB	209
 	DB	0
 	DB	241
@@ -19,7 +19,7 @@ _HeroRight0_compressed:
 	DB	148
 	DB	21
 	DB	9
-	DB	47
+	DB	48
 	DB	154
 	DB	0
 	DB	34
@@ -29,15 +29,15 @@ _HeroRight0_compressed:
 	DB	0
 	DB	157
 	DB	19
-	DB	47
+	DB	48
 	DB	25
 	DB	0
 	DB	16
 	DB	19
-	DB	16
+	DB	63
 	DB	39
-	DB	62
-	DB	47
+	DB	64
+	DB	48
 	DB	5
 	DB	135
 	DB	32
@@ -49,7 +49,7 @@ _HeroRight0_compressed:
 	DB	18
 	DB	58
 	DB	20
-	DB	55
+	DB	57
 	DB	167
 	DB	0
 	DB	18
@@ -69,38 +69,38 @@ _HeroRight0_compressed:
 	DB	18
 	DB	233
 	DB	20
-	DB	47
+	DB	48
 	DB	244
 	DB	19
 	DB	63
-	DB	26
+	DB	27
 	DB	241
 	DB	18
 	DB	72
 	DB	19
-	DB	47
+	DB	48
 	DB	36
 	DB	19
 	DB	68
-	DB	31
+	DB	32
 	DB	92
 	DB	126
 	DB	8
 	DB	168
 	DB	22
-	DB	26
+	DB	27
 	DB	209
 	DB	133
 	DB	145
 	DB	19
-	DB	28
+	DB	30
 	DB	14
 	DB	132
 	DB	139
 	DB	30
 	DB	38
 	DB	19
-	DB	45
+	DB	47
 	DB	0
 	DB	130
 	DB	41
@@ -114,7 +114,7 @@ _HeroRight0_compressed:
 	DB	19
 	DB	82
 	DB	20
-	DB	47
+	DB	48
 	DB	88
 	DB	12
 	DB	193
@@ -133,7 +133,7 @@ _HeroRight0_compressed:
 	DB	142
 	DB	18
 	DB	1
-	DB	54
+	DB	56
 	DB	0
 	DB	49
 	DB	7

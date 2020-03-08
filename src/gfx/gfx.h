@@ -20,6 +20,7 @@ extern "C" {
 #include "map4.h"
 #include "map5.h"
 #include "arrow.h"
+#include "menu.h"
 
 #ifdef __cplusplus
 }

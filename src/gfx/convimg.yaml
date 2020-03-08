@@ -49,3 +49,4 @@ convert: sprites
     - map4
     - map5
     - arrow
+    - menu
